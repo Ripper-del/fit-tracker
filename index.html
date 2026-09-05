@@ -163,6 +163,32 @@
   .onb-title { font-size: 27px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; }
   .onb-sub { color: var(--dim); font-size: 14px; margin: 10px 0 26px; line-height: 1.5; }
 
+  /* диалог вместо prompt(), который Telegram на iOS не показывает */
+  #modal {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(9,10,12,.72);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .sheet {
+    width: 100%; max-width: 620px;
+    background: var(--bg); border-top: 1px solid var(--line);
+    border-radius: 16px 16px 0 0; padding: 22px 16px calc(20px + env(safe-area-inset-bottom));
+    max-height: 85vh; overflow-y: auto;
+  }
+  .sheet-t { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
+  .sheet input {
+    width: 100%; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; color: var(--text); padding: 12px; margin-bottom: 10px;
+  }
+  .sheet input:focus { outline: none; border-color: var(--train); }
+  .choice {
+    width: 100%; text-align: left; padding: 13px 14px; margin-bottom: 7px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+    color: var(--text); font-size: 14.5px; cursor: pointer;
+  }
+  .choice:active { border-color: var(--train); }
+  .sheet-btns { display: flex; gap: 8px; margin-top: 12px; }
+
   nav {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
     background: rgba(19,21,25,.95); backdrop-filter: blur(12px);
@@ -181,7 +207,7 @@
 
   <div class="field two">
     <div><label>Вес, кг</label><input type="number" id="o-w" inputmode="decimal" placeholder="95"></div>
-    <div><label>Талия, см</label><input type="number" id="o-t" inputmode="decimal" placeholder="102"></div>
+    <div><label>Рост, см</label><input type="number" id="o-t" inputmode="decimal" placeholder="180"></div>
   </div>
   <div class="field"><label>Первый день цикла</label><input type="date" id="o-d"></div>
   <div class="field"><label>Обычное время тренировки</label>
@@ -244,7 +270,7 @@
     <p class="vs">Стартовые данные, напоминания и выгрузка.</p>
     <div class="field two">
       <div><label>Стартовый вес, кг</label><input type="number" id="m-w" inputmode="decimal"></div>
-      <div><label>Стартовая талия, см</label><input type="number" id="m-t" inputmode="decimal"></div>
+      <div><label>Рост, см</label><input type="number" id="m-t" inputmode="decimal"></div>
     </div>
     <div class="field"><label>Первый день цикла</label><input type="date" id="m-d"></div>
     <div class="field two">
@@ -263,6 +289,14 @@
     <p class="info" style="margin-top:20px">План тренировок и рацион здесь твои — я их только разложил по дням и ничего не менял. Если вес встанет надолго, начнутся боли или поедет самочувствие, это вопрос к врачу или тренеру, а не к приложению.</p>
   </div>
 
+</div>
+
+<div id="modal" class="hidden">
+  <div class="sheet">
+    <div class="sheet-t" id="mo-t"></div>
+    <div id="mo-body"></div>
+    <div class="sheet-btns" id="mo-btns"></div>
+  </div>
 </div>
 
 <nav id="nav" class="hidden">
@@ -416,13 +450,32 @@ const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : 
 const cs = tg && tg.CloudStorage && tg.CloudStorage.setItem ? tg.CloudStorage : null;
 const memStore = {};
 
+// Cloud Storage иногда не отвечает вообще — без таймаута приложение
+// зависает на загрузке и показывает пустой экран.
+function withTimeout(fn, ms) {
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const t = setTimeout(() => { if (!settled) { settled = true; reject(new Error("timeout")); } }, ms);
+    try {
+      fn((err, val) => {
+        if (settled) return;
+        settled = true; clearTimeout(t);
+        err ? reject(err) : resolve(val);
+      });
+    } catch (e) {
+      if (!settled) { settled = true; clearTimeout(t); reject(e); }
+    }
+  });
+}
+
 const Store = {
   async get(k) {
     if (cs) {
       try {
-        const v = await new Promise((res, rej) => cs.getItem(k, (e, val) => e ? rej(e) : res(val)));
-        return v ? JSON.parse(v) : null;
-      } catch (e) {}
+        const v = await withTimeout(cb => cs.getItem(k, cb), 2500);
+        if (v) return JSON.parse(v);
+        return null;
+      } catch (e) { console.warn("cloud get failed", k, e); }
     }
     try {
       const v = localStorage.getItem("fit:" + k);
@@ -432,10 +485,10 @@ const Store = {
   async set(k, val) {
     const raw = JSON.stringify(val);
     memStore[k] = val;
-    if (cs) {
-      try { await new Promise((res, rej) => cs.setItem(k, raw, e => e ? rej(e) : res())); return; } catch (e) {}
-    }
     try { localStorage.setItem("fit:" + k, raw); } catch (e) {}
+    if (cs) {
+      try { await withTimeout(cb => cs.setItem(k, raw, cb), 2500); } catch (e) { console.warn("cloud set failed", k, e); }
+    }
   },
   async clear() {
     for (const k of Object.keys(memStore)) delete memStore[k];
@@ -475,6 +528,69 @@ function daysBetween(a, b) { return Math.round((parseISO(iso(b)) - parseISO(iso(
 function cycleIdx(d) { const n = daysBetween(parseISO(P.start), d); return ((n % 14) + 14) % 14; }
 function isFuture(d) { return daysBetween(new Date(), d) > 0; }
 function haptic(s) { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(s || "light"); } catch (e) {} }
+
+/**
+ * Диалог вместо prompt() и confirm(): Telegram на iOS их блокирует.
+ * opts: { title, input, placeholder, value, choices, okText }
+ * Возвращает строку, выбранный вариант, true, либо null при отмене.
+ */
+function ask(opts) {
+  return new Promise(resolve => {
+    const m = $("modal"), body = $("mo-body"), btns = $("mo-btns");
+    $("mo-t").textContent = opts.title;
+    body.innerHTML = "";
+    btns.innerHTML = "";
+
+    let done = false;
+    const close = v => {
+      if (done) return;
+      done = true;
+      m.classList.add("hidden");
+      document.removeEventListener("keydown", onKey);
+      resolve(v);
+    };
+    const onKey = e => { if (e.key === "Escape") close(null); };
+    document.addEventListener("keydown", onKey);
+
+    if (opts.choices) {
+      opts.choices.forEach(c => {
+        const b = document.createElement("button");
+        b.className = "choice";
+        b.textContent = c;
+        b.onclick = () => close(c);
+        body.appendChild(b);
+      });
+    }
+
+    let field = null;
+    if (opts.input) {
+      field = document.createElement("input");
+      field.type = opts.input === "number" ? "number" : "text";
+      if (opts.input === "number") field.inputMode = "decimal";
+      field.placeholder = opts.placeholder || "";
+      field.value = opts.value || "";
+      body.appendChild(field);
+      field.onkeydown = e => { if (e.key === "Enter") close(field.value); };
+    }
+
+    const cancel = document.createElement("button");
+    cancel.className = "btn";
+    cancel.textContent = "Отмена";
+    cancel.onclick = () => close(null);
+    btns.appendChild(cancel);
+
+    if (opts.input || opts.okText) {
+      const ok = document.createElement("button");
+      ok.className = "btn btn-main";
+      ok.textContent = opts.okText || "Готово";
+      ok.onclick = () => close(field ? field.value : true);
+      btns.appendChild(ok);
+    }
+
+    m.classList.remove("hidden");
+    if (field) setTimeout(() => field.focus(), 60);
+  });
+}
 
 function day(key) {
   if (!DAYS[key]) {
@@ -582,9 +698,15 @@ function bindDay(key) {
     const d = day(key); d.meals[el.dataset.tmeal] = !d.meals[el.dataset.tmeal];
     haptic("light"); queueDay(key); renderDay();
   });
-  document.querySelectorAll("[data-swap]").forEach(el => el.onclick = () => {
+  document.querySelectorAll("[data-swap]").forEach(el => el.onclick = async () => {
     const i = el.dataset.swap, d = day(key);
-    const v = prompt("Чем заменил " + MEAL_NAMES[i].toLowerCase() + "?", d.swap[i] || "");
+    const v = await ask({
+      title: "Чем заменил " + MEAL_NAMES[i].toLowerCase() + "?",
+      input: "text",
+      placeholder: "например: творог 200 г + банан",
+      value: d.swap[i] || "",
+      okText: "Сохранить"
+    });
     if (v === null) return;
     if (v.trim() === "") delete d.swap[i]; else d.swap[i] = v.trim();
     queueDay(key); renderDay();
@@ -598,11 +720,10 @@ function bindDay(key) {
   if (cre) cre.onclick = () => { const d = day(key); d.cre = !d.cre; haptic("light"); queueDay(key); renderDay(); };
 
   const sk = $("skip");
-  if (sk) sk.onclick = () => {
-    const r = prompt("Причина пропуска:\n" + SKIP_REASONS.map((x, i) => (i + 1) + ". " + x).join("\n"), "1");
+  if (sk) sk.onclick = async () => {
+    const r = await ask({ title: "Почему пропуск?", choices: SKIP_REASONS });
     if (r === null) return;
-    const idx = parseInt(r, 10);
-    day(key).skip = (idx >= 1 && idx <= 5) ? SKIP_REASONS[idx - 1] : (r.trim() || "Другое");
+    day(key).skip = r;
     haptic("heavy"); queueDay(key); renderDay();
   };
   const un = $("unskip");
@@ -747,14 +868,14 @@ function renderChart() {
   </svg>`;
 }
 
-$("s-add").onclick = () => {
-  const w = prompt("Вес натощак, кг:", "");
-  if (w === null || !w.trim()) return;
-  const t = prompt("Талия, см (можно пропустить):", "");
+$("s-add").onclick = async () => {
+  const w = await ask({ title: "Вес натощак, кг", input: "number", placeholder: "94.2", okText: "Дальше" });
+  if (w === null || !String(w).trim()) return;
+  const t = await ask({ title: "Талия, см", input: "number", placeholder: "можно пропустить", okText: "Записать" });
   WEIGHTS.push({
     d: iso(new Date()),
-    w: parseFloat(w.replace(",", ".")),
-    t: t && t.trim() ? parseFloat(t.replace(",", ".")) : null
+    w: parseFloat(String(w).replace(",", ".")),
+    t: t && String(t).trim() ? parseFloat(String(t).replace(",", ".")) : null
   });
   WEIGHTS.sort((a, b) => a.d < b.d ? -1 : 1);
   saveWeights(); renderStats(); haptic("medium");
@@ -763,12 +884,12 @@ $("s-add").onclick = () => {
 /* ==================== SETTINGS ==================== */
 
 function fillSettings() {
-  $("m-w").value = P.w0; $("m-t").value = P.t0 || "";
+  $("m-w").value = P.w0; $("m-t").value = P.h || P.t0 || "";
   $("m-d").value = P.start; $("m-time").value = P.time; $("m-g").value = P.goal;
 }
 $("m-save").onclick = () => {
   P.w0 = parseFloat($("m-w").value) || P.w0;
-  P.t0 = parseFloat($("m-t").value) || null;
+  P.h = parseFloat($("m-t").value) || null;
   P.start = $("m-d").value || P.start;
   P.time = $("m-time").value;
   P.goal = Math.max(1, Math.min(20, parseInt($("m-g").value) || 9));
@@ -783,7 +904,11 @@ $("m-exp").onclick = () => {
   ta.value = JSON.stringify({ profile: P, days: DAYS, weights: WEIGHTS }, null, 1);
 };
 $("m-reset").onclick = async () => {
-  if (!confirm("Удалить все тренировки, замеры и отметки? Отменить будет нельзя.")) return;
+  const ok = await ask({
+    title: "Удалить все тренировки, замеры и отметки? Отменить будет нельзя.",
+    okText: "Удалить"
+  });
+  if (!ok) return;
   await Store.clear();
   location.reload();
 };
@@ -807,7 +932,7 @@ $("o-go").onclick = async () => {
   if (!w) { $("o-w").focus(); return; }
   P = {
     w0: w,
-    t0: parseFloat($("o-t").value) || null,
+    h: parseFloat($("o-t").value) || null,
     start: $("o-d").value || iso(new Date()),
     time: $("o-time").value,
     goal: Math.max(1, Math.min(20, parseInt($("o-g").value) || 9))
@@ -819,31 +944,56 @@ $("o-go").onclick = async () => {
   renderDay();
 };
 
-(async function boot() {
-  if (tg) {
-    try {
-      tg.ready(); tg.expand();
-      tg.setHeaderColor && tg.setHeaderColor("#131519");
-      tg.setBackgroundColor && tg.setBackgroundColor("#131519");
-    } catch (e) {}
-  }
+function showOnboarding() {
+  $("o-d").value = iso(new Date());
+  $("app").classList.add("hidden");
+  $("nav").classList.add("hidden");
+  $("onb").classList.remove("hidden");
+}
 
-  P = await Store.get("prof");
-  if (!P) {
-    $("o-d").value = iso(new Date());
-    $("onb").classList.remove("hidden");
-    return;
-  }
-
-  INDEX = (await Store.get("idx")) || [];
-  WEIGHTS = (await Store.get("wts")) || [];
-  for (const k of INDEX) {
-    const d = await Store.get("d:" + k);
-    if (d) DAYS[k] = d;
-  }
-
+function showApp() {
+  $("onb").classList.add("hidden");
   $("app").classList.remove("hidden");
   $("nav").classList.remove("hidden");
   renderDay();
+}
+
+function showError(e) {
+  document.body.innerHTML =
+    '<div style="padding:40px 20px;font-family:-apple-system,sans-serif;color:#e9ebef">' +
+    '<div style="font-size:20px;font-weight:600;margin-bottom:10px">Не удалось загрузить</div>' +
+    '<div style="color:#8b93a3;font-size:14px;line-height:1.5">Покажи это сообщение целиком, по нему видно причину:</div>' +
+    '<pre style="margin-top:14px;padding:12px;background:#1b1e24;border-radius:8px;color:#d9694a;' +
+    'font-size:11px;white-space:pre-wrap;word-break:break-word">' +
+    String(e && e.stack ? e.stack : e) + '</pre></div>';
+}
+
+window.addEventListener("error", ev => showError(ev.error || ev.message));
+
+(async function boot() {
+  try {
+    if (tg) {
+      try {
+        tg.ready(); tg.expand();
+        tg.setHeaderColor && tg.setHeaderColor("#131519");
+        tg.setBackgroundColor && tg.setBackgroundColor("#131519");
+      } catch (e) {}
+    }
+
+    P = await Store.get("prof");
+    if (!P) { showOnboarding(); return; }
+
+    INDEX = (await Store.get("idx")) || [];
+    WEIGHTS = (await Store.get("wts")) || [];
+
+    // параллельно, иначе тридцать дней грузятся тридцатью запросами подряд
+    const loaded = await Promise.all(INDEX.map(k => Store.get("d:" + k).catch(() => null)));
+    INDEX.forEach((k, i) => { if (loaded[i]) DAYS[k] = loaded[i]; });
+
+    showApp();
+  } catch (e) {
+    console.error(e);
+    showError(e);
+  }
 })();
 </script>
