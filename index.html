@@ -1,0 +1,849 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Цикл · 14 дней</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+  :root {
+    --bg:      #131519;
+    --panel:   #1b1e24;
+    --line:    #2a2f38;
+    --text:    #e9ebef;
+    --dim:     #8b93a3;
+    --faint:   #5a6272;
+    --train:   #d9694a;
+    --food:    #c9a227;
+    --water:   #4e9bc4;
+    --done:    #57b08f;
+    --skip:    #b5544f;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 15px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding-bottom: 78px; }
+  .wrap { max-width: 620px; margin: 0 auto; padding: 0 15px; }
+  .hidden { display: none !important; }
+  input, button, textarea, select { font-family: var(--sans); font-size: 15px; }
+
+  .datebar { display: flex; align-items: center; gap: 10px; padding: 16px 0 14px; border-bottom: 1px solid var(--line); }
+  .nav-b {
+    width: 32px; height: 32px; flex-shrink: 0;
+    border: 1px solid var(--line); background: none; border-radius: 8px;
+    color: var(--dim); cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  .nav-b:disabled { opacity: .3; }
+  .dateinfo { flex: 1; text-align: center; }
+  .date-main { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+  .date-sub { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 2px; }
+
+  .dayhead { padding: 20px 0 6px; }
+  .kind { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; }
+  .kind.t { color: var(--train); }
+  .kind.r { color: var(--faint); }
+  .kind.s { color: var(--skip); }
+  .daytitle { font-size: 25px; font-weight: 650; letter-spacing: -.02em; margin: 3px 0 0; }
+  .daynote { color: var(--dim); font-size: 13.5px; margin-top: 7px; }
+
+  .mod { margin: 26px 0 0; }
+  .mod-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
+  }
+  .mod-name { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; }
+  .mod-name.t { color: var(--train); }
+  .mod-name.f { color: var(--food); }
+  .mod-name.w { color: var(--water); }
+  .mod-count { font-family: var(--mono); font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+  .row { display: flex; gap: 11px; padding: 11px 0; align-items: flex-start; border-bottom: 1px solid rgba(42,47,56,.55); }
+  .row:last-child { border-bottom: none; }
+  .box {
+    width: 19px; height: 19px; flex-shrink: 0; margin-top: 1px;
+    border: 1.5px solid var(--line); border-radius: 5px;
+    display: grid; place-items: center; cursor: pointer; transition: all .16s;
+  }
+  .box svg { width: 11px; height: 11px; opacity: 0; }
+  .row.on .box { background: var(--done); border-color: var(--done); }
+  .row.on .box svg { opacity: 1; }
+  .row.on .r-name { color: var(--faint); }
+  .r-body { flex: 1; min-width: 0; }
+  .r-name { font-size: 14.5px; line-height: 1.4; transition: color .16s; }
+  .r-meta { font-family: var(--mono); font-size: 11.5px; color: var(--faint); margin-top: 3px; }
+  .r-meta b { color: var(--train); font-weight: 500; }
+
+  .logfield {
+    margin-top: 7px; width: 100%;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--text); padding: 7px 9px; font-family: var(--mono); font-size: 12.5px;
+  }
+  .logfield::placeholder { color: var(--faint); }
+  .logfield:focus { outline: none; border-color: var(--train); }
+
+  .swap {
+    background: none; border: none; color: var(--faint);
+    font-size: 12px; padding: 5px 0 0; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 2px;
+  }
+  .swapped { color: var(--food); font-family: var(--mono); font-size: 11px; margin-top: 3px; }
+
+  .water-wrap { display: flex; align-items: center; gap: 14px; padding: 16px 0 4px; }
+  .glasses { display: flex; gap: 5px; flex-wrap: wrap; flex: 1; }
+  .glass {
+    width: 26px; height: 32px; border-radius: 3px 3px 7px 7px;
+    border: 1.5px solid var(--line); cursor: pointer; transition: all .16s;
+  }
+  .glass.on { background: var(--water); border-color: var(--water); }
+  .water-n { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--water); }
+  .water-n span { font-size: 12px; color: var(--faint); }
+
+  .btn {
+    width: 100%; padding: 12px; border-radius: 8px; cursor: pointer;
+    background: none; border: 1px solid var(--line); color: var(--dim); font-size: 14px;
+  }
+  .btn:active { background: var(--panel); }
+  .btn-skip { color: var(--skip); border-color: rgba(181,84,79,.4); }
+  .btn-main { background: var(--train); border-color: var(--train); color: #17110e; font-weight: 600; }
+  .btnrow { display: flex; gap: 8px; margin-top: 22px; }
+
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 14px; }
+  .cal-m { font-size: 18px; font-weight: 600; }
+  .grid7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .dow { font-family: var(--mono); font-size: 10px; color: var(--faint); text-align: center; padding-bottom: 5px; }
+  .cell {
+    aspect-ratio: 1; border-radius: 8px; border: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer; background: var(--panel);
+  }
+  .cell.empty { border: none; background: none; cursor: default; }
+  .cell.today { border-color: var(--text); }
+  .cell-n { font-family: var(--mono); font-size: 12px; font-variant-numeric: tabular-nums; }
+  .dots { display: flex; gap: 2.5px; height: 5px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .cell.future .cell-n { color: var(--faint); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; font-size: 12px; color: var(--dim); }
+  .legend i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
+
+  .metric { display: flex; justify-content: space-between; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .metric-k { font-size: 14px; color: var(--dim); }
+  .metric-v { font-family: var(--mono); font-size: 17px; font-variant-numeric: tabular-nums; }
+  .metric-v.good { color: var(--done); }
+  .metric-v.bad { color: var(--skip); }
+
+  h2.vt { font-size: 20px; font-weight: 620; letter-spacing: -.015em; margin: 22px 0 4px; }
+  p.vs { color: var(--dim); font-size: 13.5px; margin: 0 0 16px; }
+  .sub { font-family: var(--mono); font-size: 11px; color: var(--faint); letter-spacing: .05em; margin: 26px 0 8px; }
+
+  .chart { width: 100%; height: 150px; margin: 6px 0 4px; }
+  .chart text { font-family: var(--mono); font-size: 9px; fill: var(--faint); }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; color: var(--dim); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; color: var(--text); padding: 11px 12px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--train); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .info {
+    background: var(--panel); border-left: 2px solid var(--line);
+    padding: 12px 14px; font-size: 13px; color: var(--dim); line-height: 1.55;
+    border-radius: 0 6px 6px 0; margin: 14px 0;
+  }
+  .info b { color: var(--text); font-weight: 550; }
+  .info code { font-family: var(--mono); font-size: 12px; color: var(--food); }
+
+  #onb { padding-top: 40px; }
+  .onb-title { font-size: 27px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; }
+  .onb-sub { color: var(--dim); font-size: 14px; margin: 10px 0 26px; line-height: 1.5; }
+
+  nav {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
+    background: rgba(19,21,25,.95); backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line); display: flex;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  nav button { flex: 1; background: none; border: none; color: var(--faint); font-size: 12px; padding: 12px 2px 14px; cursor: pointer; }
+  nav button.on { color: var(--train); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap hidden" id="onb">
+  <div class="onb-title">Цикл на 14 дней</div>
+  <p class="onb-sub">Тренировки, питание и вода в одном месте. Стартовые данные нужны, чтобы считать прогресс и разложить цикл по датам.</p>
+
+  <div class="field two">
+    <div><label>Вес, кг</label><input type="number" id="o-w" inputmode="decimal" placeholder="95"></div>
+    <div><label>Талия, см</label><input type="number" id="o-t" inputmode="decimal" placeholder="102"></div>
+  </div>
+  <div class="field"><label>Первый день цикла</label><input type="date" id="o-d"></div>
+  <div class="field"><label>Обычное время тренировки</label>
+    <select id="o-time"><option value="18">18:00</option><option value="19">19:00</option></select></div>
+  <div class="field"><label>Норма воды, стаканов по 300 мл</label><input type="number" id="o-g" inputmode="numeric" value="9"></div>
+  <button class="btn btn-main" id="o-go" style="margin-top:8px">Начать цикл</button>
+  <p class="info" style="margin-top:22px">День 1 цикла — тренировка A. Дальше приложение само разложит четырнадцатидневную схему по календарю и будет повторять её месяц за месяцем.</p>
+</div>
+
+<div id="app" class="hidden">
+
+  <div class="wrap" id="view-day">
+    <div class="datebar">
+      <button class="nav-b" id="prev">‹</button>
+      <div class="dateinfo">
+        <div class="date-main" id="d-main">—</div>
+        <div class="date-sub" id="d-sub"></div>
+      </div>
+      <button class="nav-b" id="next">›</button>
+    </div>
+    <div class="dayhead">
+      <div class="kind" id="d-kind"></div>
+      <h1 class="daytitle" id="d-title">—</h1>
+      <div class="daynote" id="d-note"></div>
+    </div>
+    <div id="d-body"></div>
+    <div class="btnrow" id="d-actions"></div>
+  </div>
+
+  <div class="wrap hidden" id="view-cal">
+    <div class="cal-head">
+      <button class="nav-b" id="c-prev">‹</button>
+      <div class="cal-m" id="c-month">—</div>
+      <button class="nav-b" id="c-next">›</button>
+    </div>
+    <div class="grid7" id="c-dow"></div>
+    <div class="grid7" id="c-grid" style="margin-top:5px"></div>
+    <div class="legend">
+      <span><i style="background:var(--train)"></i>тренировка</span>
+      <span><i style="background:var(--food)"></i>питание</span>
+      <span><i style="background:var(--water)"></i>вода</span>
+      <span><i style="background:var(--skip)"></i>пропуск</span>
+    </div>
+    <p class="info">Нажми на день, чтобы открыть и отредактировать его. Прошлые дни можно закрывать задним числом.</p>
+  </div>
+
+  <div class="wrap hidden" id="view-stat">
+    <h2 class="vt">Статистика</h2>
+    <p class="vs" id="s-period"></p>
+    <div id="s-metrics"></div>
+    <div class="sub">ВЕС</div>
+    <div id="s-chart"></div>
+    <div class="btnrow" style="margin-top:10px"><button class="btn" id="s-add">Записать замер</button></div>
+    <div class="sub">ПОСЛЕДНИЕ ЗАМЕРЫ</div>
+    <div id="s-list"></div>
+  </div>
+
+  <div class="wrap hidden" id="view-more">
+    <h2 class="vt">Настройки</h2>
+    <p class="vs">Стартовые данные, напоминания и выгрузка.</p>
+    <div class="field two">
+      <div><label>Стартовый вес, кг</label><input type="number" id="m-w" inputmode="decimal"></div>
+      <div><label>Стартовая талия, см</label><input type="number" id="m-t" inputmode="decimal"></div>
+    </div>
+    <div class="field"><label>Первый день цикла</label><input type="date" id="m-d"></div>
+    <div class="field two">
+      <div><label>Время тренировки</label><select id="m-time"><option value="18">18:00</option><option value="19">19:00</option></select></div>
+      <div><label>Норма воды</label><input type="number" id="m-g" inputmode="numeric"></div>
+    </div>
+    <button class="btn" id="m-save">Сохранить</button>
+
+    <div class="sub">НАПОМИНАНИЯ</div>
+    <p class="info">Пуши шлёт бот, а не это приложение — страница живёт, только пока открыта. Файл <code>bot.py</code> поднимается на твоём VPS и присылает: в 13:00 — что за тренировка сегодня, в 17:30 — за час до зала, и воду каждые два часа. В дни отдыха текст другой.</p>
+
+    <div class="sub">ДАННЫЕ</div>
+    <button class="btn" id="m-exp">Показать все данные для копирования</button>
+    <textarea id="m-json" class="logfield hidden" rows="7" readonly style="margin-top:10px"></textarea>
+    <button class="btn btn-skip" id="m-reset" style="margin-top:10px">Сбросить всё</button>
+    <p class="info" style="margin-top:20px">План тренировок и рацион здесь твои — я их только разложил по дням и ничего не менял. Если вес встанет надолго, начнутся боли или поедет самочувствие, это вопрос к врачу или тренеру, а не к приложению.</p>
+  </div>
+
+</div>
+
+<nav id="nav" class="hidden">
+  <button data-v="day" class="on">Сегодня</button>
+  <button data-v="cal">Календарь</button>
+  <button data-v="stat">Стата</button>
+  <button data-v="more">Ещё</button>
+</nav>
+
+<script>
+/* ==================== DATA ==================== */
+
+const WORKOUTS = {
+  A: { name: "Тренировка A", ex: [
+    ["Приседания со штангой на спине (или в Смите)", "4 × 8–10"],
+    ["Жим штанги лёжа на горизонтальной скамье", "4 × 8–10"],
+    ["Тяга верхнего блока к груди широким хватом", "4 × 10–12"],
+    ["Жим гантелей сидя, угол 75–80°", "3 × 10–12"],
+    ["Сгибания рук со штангой стоя", "3 × 12"],
+    ["Скручивания на коврике", "3 × 15–20"]
+  ]},
+  B: { name: "Тренировка B", ex: [
+    ["Румынская тяга со штангой или гантелями", "4 × 10–12"],
+    ["Жим гантелей на наклонной скамье, 30°", "4 × 10–12"],
+    ["Горизонтальная рычажная тяга (или нижний блок)", "4 × 10–12"],
+    ["Махи гантелями через стороны стоя", "4 × 12–15"],
+    ["Французский жим лёжа с EZ-грифом", "3 × 10–12"],
+    ["Подъём ног в упоре на брусьях", "3 × 12–15"]
+  ]},
+  C: { name: "Тренировка C", ex: [
+    ["Жим ногами в тренажёре", "4 × 10–12"],
+    ["Сгибания ног сидя или лёжа", "4 × 12–15"],
+    ["Сведения рук в бабочке или кроссовере", "3 × 12–15"],
+    ["Тяга горизонтального блока нейтральным хватом", "4 × 10–12"],
+    ["Сгибания с гантелями хватом «молот»", "3 × 12"],
+    ["Разгибания рук на верхнем блоке с канатом", "3 × 12–15"]
+  ]},
+  D: { name: "Тренировка D", note: "Попробуй добавить по одному повторению в подходах против дня 1.", ex: [
+    ["Приседания в Смите или со штангой", "4 × 8–10"],
+    ["Жим штанги лёжа", "4 × 8–10"],
+    ["Тяга верхнего блока параллельным хватом", "4 × 10–12"],
+    ["Жим сидя в тренажёре для плеч", "3 × 10–12"],
+    ["Подъём штанги на скамье Скотта", "3 × 10–12"],
+    ["Скручивания на наклонной скамье", "3 × 15"]
+  ]},
+  E: { name: "Тренировка E", ex: [
+    ["Гиперэкстензия с лёгким блином у груди", "4 × 12–15"],
+    ["Жим гантелей на горизонтальной скамье", "4 × 10–12"],
+    ["Тяга верхнего блока обратным хватом", "4 × 10–12"],
+    ["Махи в стороны с упором грудью в наклонную", "4 × 12–15"],
+    ["Разгибания в кроссовере с прямой рукоятью", "3 × 12"],
+    ["Подъём коленей к груди в висе", "3 × 12–15"]
+  ]},
+  F: { name: "Тренировка F", ex: [
+    ["Жим ногами, высокая широкая постановка стоп", "4 × 10–12"],
+    ["Разгибания ног в тренажёре сидя", "3 × 12–15"],
+    ["Жим гантелей на наклонной скамье, 30°", "4 × 10–12"],
+    ["Тяга Т-грифа с упором грудью", "4 × 10–12"],
+    ["Махи в наклоне на заднюю дельту", "4 × 15"],
+    ["Суперсет: бицепс сидя 3 × 12 + канат на трицепс 3 × 12", "суперсет"]
+  ]}
+};
+
+const CARDIO = "Кардио: 15–20 мин ходьбы в гору на дорожке";
+
+const CYCLE = [
+  { w: "A" },
+  { r: "Восстановление, 8–10 тысяч шагов пешком, креатин 5 г." },
+  { w: "B" },
+  { r: "Восстановление, норма воды, шаги." },
+  { w: "C" },
+  { r: "Лёгкая прогулка, полноценный сон." },
+  { r: "Подготовка еды на неделю, замеры веса натощак." },
+  { w: "D" },
+  { r: "Восстановление, 8–10 тысяч шагов пешком, креатин 5 г." },
+  { w: "E" },
+  { r: "Восстановление, контроль питания." },
+  { w: "F" },
+  { r: "Пассивный отдых, прогулка на свежем воздухе." },
+  { r: "Фиксация результатов: взвешивание, замеры талии. Подготовка к новому циклу." }
+];
+
+const MEALS = [
+  [ "Яичница из 3 яиц (капля масла) + овсянка 45 г сухой на воде + ягоды 100 г",
+    "Куриное филе 180 г на гриле + гречка 50 г сухой + салат из огурца и помидора 200 г + оливковое масло 5 г",
+    "Протеин 30 г на воде + банан 120 г",
+    "Минтай или хек 220 г запечённый + отварной картофель 180 г + брокколи 200 г + масло 5 г" ],
+  [ "Омлет из 3 яиц со шпинатом 100 г + 2 ржаных хлебца 20 г",
+    "Филе индейки 180 г + рис басмати 50 г сухой + пекинская капуста с огурцом 200 г + льняное масло 5 г",
+    "Протеин 30 г на воде + зелёное яблоко 150 г",
+    "Постная говядина 170 г тушёная + макароны твёрдых сортов 45 г сухих + тушёные кабачки 200 г" ],
+  [ "Творог 5% 180 г + банан 100 г + ягоды 100 г",
+    "Куриное филе 180 г в специях + булгур 50 г сухой + свежие овощи 200 г + оливковое масло 5 г",
+    "Протеин 30 г на воде + 2 рисовых хлебца с арахисовой пастой 15 г",
+    "Треска 220 г на пару + запечённый картофель 180 г + квашеная капуста 150 г" ],
+  [ "3 вареных яйца + тост из цельнозернового хлеба 40 г + свежий огурец 100 г",
+    "Фарш из куриной грудки 180 г с томатами + гречка 50 г сухой + зелень и салат 150 г + масло 5 г",
+    "Протеин 30 г на воде + банан 120 г",
+    "Филе индейки 170 г + кускус 45 г сухой + стручковая фасоль на пару 200 г + масло 5 г" ],
+  [ "Овсяноблин: 2 яйца + 45 г молотых хлопьев + 1 яйцо всмятку + ягоды 80 г",
+    "Постная говядина 170 г запечённая + рис басмати 50 г сухой + капустный салат с морковью 200 г + масло 5 г",
+    "Протеин 30 г на воде + груша или апельсин 150 г",
+    "Судак или хек 220 г в духовке + картофельное пюре на воде 180 г + огурцы 200 г + масло 5 г" ],
+  [ "Глазунья из 3 яиц с шампиньонами 100 г + цельнозерновой хлеб 40 г",
+    "Куриное бедро без кожи 180 г запечённое + гречка 45 г сухой + овощная нарезка 200 г",
+    "Протеин 30 г на воде + банан 120 г",
+    "Кальмары отварные 220 г + рис 45 г сухой + цветная капуста на пару 200 г + масло 5 г" ],
+  [ "Творог 5% 180 г взбить с 15 г протеина и ягодами 100 г + тост 30 г",
+    "Филе индейки 180 г тушёное + макароны твёрдых сортов 50 г сухих + огурец 150 г",
+    "Протеин 15 г на воде + зелёное яблоко 150 г + миндаль 15 г",
+    "Минтай 220 г + картофель в мундире 180 г + листовая зелень 150 г + льняное масло 5 г" ],
+  [ "3 вареных яйца + овсянка 45 г сухой с корицей и тёртым яблоком 100 г",
+    "Куриная грудка 180 г в рукаве + булгур 50 г сухой + пекинская капуста с огурцом 200 г + масло 5 г",
+    "Протеин 30 г на воде + банан 120 г",
+    "Хек 220 г в томатном соке + картофель отварной 180 г + кабачок на гриле 200 г" ],
+  [ "Скрэмбл из 3 яиц с помидорами 100 г + цельнозерновой тост 40 г",
+    "Постная телятина 170 г тушёная + гречка 50 г сухой + квашеная капуста 150 г + масло 5 г",
+    "Протеин 30 г на воде + киви 2 шт, ~140 г",
+    "Филе индейки 170 г на сухой сковороде + макароны 45 г сухих + стручковая фасоль 200 г + масло 5 г" ],
+  [ "Творог 5% 180 г + банан 120 г + щепотка корицы",
+    "Куриное филе 180 г котлетами на пару + рис басмати 50 г сухой + огурцы с зеленью 200 г + масло 5 г",
+    "Протеин 30 г на воде + 2 цельнозерновых хлебца + арахисовая паста 12 г",
+    "Треска или нежирный пангасиус 220 г + запечённый картофель 180 г + брокколи 200 г + масло 5 г" ],
+  [ "Яичница из 3 яиц + овсяные хлопья 45 г на воде + вишня или черника 100 г",
+    "Филе индейки 180 г + киноа или булгур 50 г сухой + помидоры, перец, лук 200 г + масло 5 г",
+    "Протеин 30 г на воде + банан 120 г",
+    "Нежирная говядина 170 г отварная + картофель отварной 180 г + тушёная капуста 200 г + масло 5 г" ],
+  [ "Омлет из 3 яиц с зеленью + цельнозерновой хлеб 40 г + свежий огурец",
+    "Куриное филе 180 г с паприкой + гречка 50 г сухой + морковь с капустой 200 г + льняное масло 5 г",
+    "Протеин 30 г на воде + апельсин или грейпфрут 180 г",
+    "Минтай 220 г на пару с травами + рис 45 г сухой + фасоль или кабачки 200 г + масло 5 г" ],
+  [ "3 вареных яйца всмятку + овсянка 45 г на воде + ягоды 100 г",
+    "Куриные бёдра без кожи 180 г запечённые + макароны 45 г сухих + огурцы с зеленью 200 г",
+    "Протеин 30 г на воде + банан 120 г",
+    "Креветки или мидии 200 г очищенных + рис 45 г сухой + томаты с брокколи 200 г + масло 5 г" ],
+  [ "Творог 5% 180 г + 1 вареное яйцо + ягоды 100 г + хлебец 10 г",
+    "Постная говядина 170 г кубиками + рис 50 г сухой + капуста 200 г + масло 5 г",
+    "Протеин 30 г на воде + зелёное яблоко 150 г + грецкие орехи 15 г",
+    "Хек или судак 220 г в фольге с лимоном + картофель дольками 180 г + салатные листья 150 г + масло 5 г" ]
+];
+
+const MEAL_NAMES = ["Завтрак", "Обед", "Перекус", "Ужин"];
+const DOW = ["пн","вт","ср","чт","пт","сб","вс"];
+const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const MONTHS_N = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const SKIP_REASONS = ["Болезнь", "Работа или учёба", "Не было сил", "Травма", "Другое"];
+
+/* ==================== STORAGE ==================== */
+
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+const cs = tg && tg.CloudStorage && tg.CloudStorage.setItem ? tg.CloudStorage : null;
+const memStore = {};
+
+const Store = {
+  async get(k) {
+    if (cs) {
+      try {
+        const v = await new Promise((res, rej) => cs.getItem(k, (e, val) => e ? rej(e) : res(val)));
+        return v ? JSON.parse(v) : null;
+      } catch (e) {}
+    }
+    try {
+      const v = localStorage.getItem("fit:" + k);
+      return v ? JSON.parse(v) : null;
+    } catch (e) { return memStore[k] || null; }
+  },
+  async set(k, val) {
+    const raw = JSON.stringify(val);
+    memStore[k] = val;
+    if (cs) {
+      try { await new Promise((res, rej) => cs.setItem(k, raw, e => e ? rej(e) : res())); return; } catch (e) {}
+    }
+    try { localStorage.setItem("fit:" + k, raw); } catch (e) {}
+  },
+  async clear() {
+    for (const k of Object.keys(memStore)) delete memStore[k];
+    if (cs) {
+      try {
+        await new Promise(r => cs.getKeys((e, ks) =>
+          ks && ks.length ? cs.removeItems(ks, () => r()) : r()));
+      } catch (e) {}
+    }
+    try { Object.keys(localStorage).filter(k => k.startsWith("fit:")).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  }
+};
+
+let P = null, DAYS = {}, INDEX = [], WEIGHTS = [];
+let cur = new Date(), calM = new Date();
+
+const saveQ = {};
+function queueDay(key) {
+  clearTimeout(saveQ[key]);
+  saveQ[key] = setTimeout(() => Store.set("d:" + key, DAYS[key]), 400);
+}
+function saveProfile() { Store.set("prof", P); }
+function saveIndex()   { Store.set("idx", INDEX); }
+function saveWeights() { Store.set("wts", WEIGHTS); }
+
+/* ==================== HELPERS ==================== */
+
+const $ = id => document.getElementById(id);
+const CHECK = '<svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#131519" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+function iso(d) {
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function parseISO(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
+function daysBetween(a, b) { return Math.round((parseISO(iso(b)) - parseISO(iso(a))) / 864e5); }
+function cycleIdx(d) { const n = daysBetween(parseISO(P.start), d); return ((n % 14) + 14) % 14; }
+function isFuture(d) { return daysBetween(new Date(), d) > 0; }
+function haptic(s) { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(s || "light"); } catch (e) {} }
+
+function day(key) {
+  if (!DAYS[key]) {
+    DAYS[key] = { ex: {}, log: {}, meals: {}, swap: {}, water: 0, cre: false, skip: null };
+    if (!INDEX.includes(key)) { INDEX.push(key); saveIndex(); }
+  }
+  return DAYS[key];
+}
+const dayRO = key => DAYS[key] || null;
+
+/* ==================== DAY ==================== */
+
+function renderDay() {
+  const key = iso(cur);
+  const d = dayRO(key);
+  const ci = cycleIdx(cur);
+  const plan = CYCLE[ci];
+  const isTrain = !!plan.w;
+  const wk = isTrain ? WORKOUTS[plan.w] : null;
+  const meals = MEALS[ci];
+  const today = iso(new Date());
+  const skipped = d && d.skip;
+
+  $("d-main").textContent = cur.getDate() + " " + MONTHS[cur.getMonth()] + (key === today ? ", сегодня" : "");
+  $("d-sub").textContent = DOW[(cur.getDay() + 6) % 7].toUpperCase() + " · ДЕНЬ ЦИКЛА " + (ci + 1) + "/14";
+  $("next").disabled = daysBetween(new Date(), cur) >= 7;
+
+  const kind = $("d-kind");
+  if (skipped) { kind.className = "kind s"; kind.textContent = "ПРОПУЩЕН"; }
+  else if (isTrain) { kind.className = "kind t"; kind.textContent = "ЗАЛ"; }
+  else { kind.className = "kind r"; kind.textContent = "ОТДЫХ"; }
+
+  $("d-title").textContent = skipped ? "День пропущен" : (isTrain ? wk.name : "День отдыха");
+  $("d-note").textContent = skipped ? ("Причина: " + d.skip) : (isTrain ? (wk.note || CARDIO) : plan.r);
+
+  let html = "";
+
+  if (isTrain && !skipped) {
+    const done = wk.ex.filter((_, i) => d && d.ex[i]).length;
+    html += `<div class="mod"><div class="mod-head">
+      <span class="mod-name t">УПРАЖНЕНИЯ</span><span class="mod-count">${done}/${wk.ex.length}</span></div>`;
+    wk.ex.forEach(([n, s], i) => {
+      const on = d && d.ex[i];
+      const lg = (d && d.log[i]) || "";
+      html += `<div class="row ${on ? "on" : ""}">
+        <div class="box" data-tex="${i}">${CHECK}</div>
+        <div class="r-body">
+          <div class="r-name">${n}</div>
+          <div class="r-meta"><b>${s}</b></div>
+          <input class="logfield" data-log="${i}" value="${esc(lg)}" placeholder="рабочий вес, ощущения">
+        </div></div>`;
+    });
+    if (wk.note) html += `<div class="row"><div class="r-body"><div class="r-meta">${CARDIO}</div></div></div>`;
+    html += `</div>`;
+  }
+
+  const mdone = meals.filter((_, i) => d && d.meals[i]).length;
+  html += `<div class="mod"><div class="mod-head">
+    <span class="mod-name f">ПИТАНИЕ</span><span class="mod-count">${mdone}/4</span></div>`;
+  meals.forEach((m, i) => {
+    const on = d && d.meals[i];
+    const sw = d && d.swap[i];
+    html += `<div class="row ${on ? "on" : ""}">
+      <div class="box" data-tmeal="${i}">${CHECK}</div>
+      <div class="r-body">
+        <div class="r-meta" style="margin:0 0 3px">${MEAL_NAMES[i]}</div>
+        <div class="r-name">${sw ? esc(sw) : m}</div>
+        ${sw ? '<div class="swapped">заменено, в плане было другое</div>' : ""}
+        <button class="swap" data-swap="${i}">${sw ? "изменить замену" : "заменить блюдо"}</button>
+      </div></div>`;
+  });
+  html += `</div>`;
+
+  const wn = d ? d.water : 0;
+  html += `<div class="mod"><div class="mod-head">
+    <span class="mod-name w">ВОДА</span>
+    <span class="mod-count">${(wn * 0.3).toFixed(1)} л из ${(P.goal * 0.3).toFixed(1)} л</span></div>
+    <div class="water-wrap">
+      <div class="glasses">${Array.from({ length: P.goal }, (_, i) =>
+        `<div class="glass ${i < wn ? "on" : ""}" data-glass="${i}"></div>`).join("")}</div>
+      <div class="water-n">${wn}<span>/${P.goal}</span></div>
+    </div>
+    <div class="row ${d && d.cre ? "on" : ""}" style="margin-top:8px">
+      <div class="box" data-cre="1">${CHECK}</div>
+      <div class="r-body"><div class="r-name">Креатин 5 г</div></div>
+    </div></div>`;
+
+  $("d-body").innerHTML = html;
+  $("d-actions").innerHTML = skipped
+    ? `<button class="btn" id="unskip">Вернуть день</button>`
+    : `<button class="btn btn-skip" id="skip">Отметить пропуск</button>`;
+
+  bindDay(key);
+}
+
+function bindDay(key) {
+  document.querySelectorAll("[data-tex]").forEach(el => el.onclick = () => {
+    const d = day(key); d.ex[el.dataset.tex] = !d.ex[el.dataset.tex];
+    haptic("medium"); queueDay(key); renderDay();
+  });
+  document.querySelectorAll("[data-log]").forEach(el => {
+    el.onchange = () => { const d = day(key); d.log[el.dataset.log] = el.value; queueDay(key); };
+  });
+  document.querySelectorAll("[data-tmeal]").forEach(el => el.onclick = () => {
+    const d = day(key); d.meals[el.dataset.tmeal] = !d.meals[el.dataset.tmeal];
+    haptic("light"); queueDay(key); renderDay();
+  });
+  document.querySelectorAll("[data-swap]").forEach(el => el.onclick = () => {
+    const i = el.dataset.swap, d = day(key);
+    const v = prompt("Чем заменил " + MEAL_NAMES[i].toLowerCase() + "?", d.swap[i] || "");
+    if (v === null) return;
+    if (v.trim() === "") delete d.swap[i]; else d.swap[i] = v.trim();
+    queueDay(key); renderDay();
+  });
+  document.querySelectorAll("[data-glass]").forEach(el => el.onclick = () => {
+    const d = day(key), i = +el.dataset.glass;
+    d.water = (d.water === i + 1) ? i : i + 1;
+    haptic("light"); queueDay(key); renderDay();
+  });
+  const cre = document.querySelector("[data-cre]");
+  if (cre) cre.onclick = () => { const d = day(key); d.cre = !d.cre; haptic("light"); queueDay(key); renderDay(); };
+
+  const sk = $("skip");
+  if (sk) sk.onclick = () => {
+    const r = prompt("Причина пропуска:\n" + SKIP_REASONS.map((x, i) => (i + 1) + ". " + x).join("\n"), "1");
+    if (r === null) return;
+    const idx = parseInt(r, 10);
+    day(key).skip = (idx >= 1 && idx <= 5) ? SKIP_REASONS[idx - 1] : (r.trim() || "Другое");
+    haptic("heavy"); queueDay(key); renderDay();
+  };
+  const un = $("unskip");
+  if (un) un.onclick = () => { day(key).skip = null; queueDay(key); renderDay(); };
+}
+
+$("prev").onclick = () => { cur.setDate(cur.getDate() - 1); renderDay(); };
+$("next").onclick = () => { cur.setDate(cur.getDate() + 1); renderDay(); };
+
+/* ==================== CALENDAR ==================== */
+
+function renderCal() {
+  $("c-month").textContent = MONTHS_N[calM.getMonth()] + " " + calM.getFullYear();
+  $("c-dow").innerHTML = DOW.map(d => `<div class="dow">${d}</div>`).join("");
+
+  const first = new Date(calM.getFullYear(), calM.getMonth(), 1);
+  const shift = (first.getDay() + 6) % 7;
+  const total = new Date(calM.getFullYear(), calM.getMonth() + 1, 0).getDate();
+  const today = iso(new Date());
+  let html = "";
+
+  for (let i = 0; i < shift; i++) html += `<div class="cell empty"></div>`;
+
+  for (let n = 1; n <= total; n++) {
+    const dt = new Date(calM.getFullYear(), calM.getMonth(), n);
+    const key = iso(dt), d = dayRO(key), ci = cycleIdx(dt);
+    const isTrain = !!CYCLE[ci].w, fut = isFuture(dt);
+    let dots = "";
+
+    if (d && d.skip) dots = `<span class="dot" style="background:var(--skip)"></span>`;
+    else if (d) {
+      if (isTrain) {
+        const tot = WORKOUTS[CYCLE[ci].w].ex.length;
+        const dn = Object.values(d.ex).filter(Boolean).length;
+        if (dn > 0) dots += `<span class="dot" style="background:var(--train);opacity:${dn >= tot ? 1 : .45}"></span>`;
+      }
+      const md = Object.values(d.meals).filter(Boolean).length;
+      if (md > 0) dots += `<span class="dot" style="background:var(--food);opacity:${md >= 4 ? 1 : .45}"></span>`;
+      if (d.water > 0) dots += `<span class="dot" style="background:var(--water);opacity:${d.water >= P.goal ? 1 : .45}"></span>`;
+    }
+
+    html += `<div class="cell ${key === today ? "today" : ""} ${fut ? "future" : ""}" data-day="${key}"
+      style="${isTrain && !fut ? "border-color:rgba(217,105,74,.35)" : ""}">
+      <span class="cell-n">${n}</span><span class="dots">${dots}</span></div>`;
+  }
+
+  $("c-grid").innerHTML = html;
+  document.querySelectorAll("[data-day]").forEach(el => el.onclick = () => {
+    cur = parseISO(el.dataset.day); switchView("day"); renderDay(); haptic("light");
+  });
+}
+
+$("c-prev").onclick = () => { calM.setMonth(calM.getMonth() - 1); renderCal(); };
+$("c-next").onclick = () => { calM.setMonth(calM.getMonth() + 1); renderCal(); };
+
+/* ==================== STATS ==================== */
+
+function renderStats() {
+  const start = parseISO(P.start);
+  const elapsed = Math.max(0, daysBetween(start, new Date())) + 1;
+  let planned = 0, done = 0, partial = 0, skips = 0, waterSum = 0, waterDays = 0, mealsDone = 0, mealsPlan = 0;
+
+  for (let i = 0; i < elapsed; i++) {
+    const dt = new Date(start); dt.setDate(dt.getDate() + i);
+    const key = iso(dt), d = dayRO(key), ci = cycleIdx(dt), isTrain = !!CYCLE[ci].w;
+    if (isTrain) planned++;
+    if (d && d.skip) { skips++; continue; }
+    if (d) {
+      if (isTrain) {
+        const tot = WORKOUTS[CYCLE[ci].w].ex.length;
+        const dn = Object.values(d.ex).filter(Boolean).length;
+        if (dn >= tot) done++; else if (dn > 0) partial++;
+      }
+      if (d.water > 0) { waterSum += d.water; waterDays++; }
+      mealsDone += Object.values(d.meals).filter(Boolean).length;
+    }
+    mealsPlan += 4;
+  }
+
+  let streak = 0;
+  for (let i = 0; i < 400; i++) {
+    const dt = new Date(); dt.setDate(dt.getDate() - i);
+    if (daysBetween(start, dt) < 0) break;
+    const d = dayRO(iso(dt));
+    if (d && d.skip) break;
+    if (CYCLE[cycleIdx(dt)].w) {
+      const dn = d ? Object.values(d.ex).filter(Boolean).length : 0;
+      if (dn === 0) { if (i === 0) continue; else break; }
+    }
+    streak++;
+  }
+
+  const lastW = WEIGHTS.length ? WEIGHTS[WEIGHTS.length - 1].w : P.w0;
+  const delta = (lastW - P.w0).toFixed(1);
+  const mealPct = mealsPlan ? Math.round(mealsDone / mealsPlan * 100) : 0;
+  const sd = parseISO(P.start);
+
+  $("s-period").textContent = "С " + sd.getDate() + " " + MONTHS[sd.getMonth()] +
+    " · день " + elapsed + ", цикл " + (Math.floor((elapsed - 1) / 14) + 1);
+
+  $("s-metrics").innerHTML = `
+    <div class="metric"><span class="metric-k">Тренировок выполнено</span><span class="metric-v good">${done} / ${planned}</span></div>
+    ${partial ? `<div class="metric"><span class="metric-k">Начато, но не закрыто</span><span class="metric-v">${partial}</span></div>` : ""}
+    <div class="metric"><span class="metric-k">Пропусков</span><span class="metric-v ${skips ? "bad" : ""}">${skips}</span></div>
+    <div class="metric"><span class="metric-k">Дней без пропуска подряд</span><span class="metric-v">${streak}</span></div>
+    <div class="metric"><span class="metric-k">Питание по плану</span><span class="metric-v">${mealPct}%</span></div>
+    <div class="metric"><span class="metric-k">Вода в среднем</span><span class="metric-v">${waterDays ? (waterSum / waterDays * 0.3).toFixed(1) : "—"} л</span></div>
+    <div class="metric"><span class="metric-k">Вес сейчас</span><span class="metric-v">${lastW} кг</span></div>
+    <div class="metric"><span class="metric-k">Изменение от старта</span><span class="metric-v ${delta < 0 ? "good" : ""}">${delta > 0 ? "+" : ""}${delta} кг</span></div>`;
+
+  renderChart();
+
+  $("s-list").innerHTML = WEIGHTS.length
+    ? WEIGHTS.slice().reverse().slice(0, 10).map(x => {
+        const dd = parseISO(x.d);
+        return `<div class="metric"><span class="metric-k">${dd.getDate()} ${MONTHS[dd.getMonth()]}</span>
+          <span class="metric-v">${x.w} кг${x.t ? " · " + x.t + " см" : ""}</span></div>`;
+      }).join("")
+    : `<p class="vs" style="margin-top:8px">Замеров пока нет. По плану взвешивание натощак на 7-й и 14-й день цикла.</p>`;
+}
+
+function renderChart() {
+  const pts = [{ d: P.start, w: P.w0 }].concat(WEIGHTS);
+  if (pts.length < 2) {
+    $("s-chart").innerHTML = `<p class="vs">Нужно минимум два замера, чтобы построить линию.</p>`;
+    return;
+  }
+  const W = 320, H = 150, pad = 26;
+  const ws = pts.map(p => +p.w);
+  const min = Math.min(...ws) - .6, max = Math.max(...ws) + .6;
+  const xs = i => pad + i * (W - pad - 8) / (pts.length - 1);
+  const ys = v => H - pad - (v - min) / (max - min) * (H - pad - 14);
+  const line = pts.map((p, i) => xs(i) + "," + ys(+p.w)).join(" ");
+
+  $("s-chart").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <line x1="${pad}" y1="${ys(max - .6)}" x2="${W - 8}" y2="${ys(max - .6)}" stroke="#2a2f38"/>
+    <line x1="${pad}" y1="${ys(min + .6)}" x2="${W - 8}" y2="${ys(min + .6)}" stroke="#2a2f38"/>
+    <text x="2" y="${ys(max - .6) + 3}">${(max - .6).toFixed(1)}</text>
+    <text x="2" y="${ys(min + .6) + 3}">${(min + .6).toFixed(1)}</text>
+    <polyline points="${line}" fill="none" stroke="#57b08f" stroke-width="2" stroke-linejoin="round"/>
+    ${pts.map((p, i) => `<circle cx="${xs(i)}" cy="${ys(+p.w)}" r="3" fill="#57b08f"/>`).join("")}
+  </svg>`;
+}
+
+$("s-add").onclick = () => {
+  const w = prompt("Вес натощак, кг:", "");
+  if (w === null || !w.trim()) return;
+  const t = prompt("Талия, см (можно пропустить):", "");
+  WEIGHTS.push({
+    d: iso(new Date()),
+    w: parseFloat(w.replace(",", ".")),
+    t: t && t.trim() ? parseFloat(t.replace(",", ".")) : null
+  });
+  WEIGHTS.sort((a, b) => a.d < b.d ? -1 : 1);
+  saveWeights(); renderStats(); haptic("medium");
+};
+
+/* ==================== SETTINGS ==================== */
+
+function fillSettings() {
+  $("m-w").value = P.w0; $("m-t").value = P.t0 || "";
+  $("m-d").value = P.start; $("m-time").value = P.time; $("m-g").value = P.goal;
+}
+$("m-save").onclick = () => {
+  P.w0 = parseFloat($("m-w").value) || P.w0;
+  P.t0 = parseFloat($("m-t").value) || null;
+  P.start = $("m-d").value || P.start;
+  P.time = $("m-time").value;
+  P.goal = Math.max(1, Math.min(20, parseInt($("m-g").value) || 9));
+  saveProfile(); renderDay();
+  haptic("medium");
+  $("m-save").textContent = "Сохранено";
+  setTimeout(() => $("m-save").textContent = "Сохранить", 1400);
+};
+$("m-exp").onclick = () => {
+  const ta = $("m-json");
+  ta.classList.toggle("hidden");
+  ta.value = JSON.stringify({ profile: P, days: DAYS, weights: WEIGHTS }, null, 1);
+};
+$("m-reset").onclick = async () => {
+  if (!confirm("Удалить все тренировки, замеры и отметки? Отменить будет нельзя.")) return;
+  await Store.clear();
+  location.reload();
+};
+
+/* ==================== NAV ==================== */
+
+function switchView(v) {
+  document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+  ["day", "cal", "stat", "more"].forEach(x => $("view-" + x).classList.toggle("hidden", x !== v));
+  window.scrollTo(0, 0);
+  if (v === "cal") renderCal();
+  if (v === "stat") renderStats();
+  if (v === "more") fillSettings();
+}
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => { switchView(b.dataset.v); haptic("light"); });
+
+/* ==================== BOOT ==================== */
+
+$("o-go").onclick = async () => {
+  const w = parseFloat($("o-w").value);
+  if (!w) { $("o-w").focus(); return; }
+  P = {
+    w0: w,
+    t0: parseFloat($("o-t").value) || null,
+    start: $("o-d").value || iso(new Date()),
+    time: $("o-time").value,
+    goal: Math.max(1, Math.min(20, parseInt($("o-g").value) || 9))
+  };
+  await Store.set("prof", P);
+  $("onb").classList.add("hidden");
+  $("app").classList.remove("hidden");
+  $("nav").classList.remove("hidden");
+  renderDay();
+};
+
+(async function boot() {
+  if (tg) {
+    try {
+      tg.ready(); tg.expand();
+      tg.setHeaderColor && tg.setHeaderColor("#131519");
+      tg.setBackgroundColor && tg.setBackgroundColor("#131519");
+    } catch (e) {}
+  }
+
+  P = await Store.get("prof");
+  if (!P) {
+    $("o-d").value = iso(new Date());
+    $("onb").classList.remove("hidden");
+    return;
+  }
+
+  INDEX = (await Store.get("idx")) || [];
+  WEIGHTS = (await Store.get("wts")) || [];
+  for (const k of INDEX) {
+    const d = await Store.get("d:" + k);
+    if (d) DAYS[k] = d;
+  }
+
+  $("app").classList.remove("hidden");
+  $("nav").classList.remove("hidden");
+  renderDay();
+})();
+</script>
