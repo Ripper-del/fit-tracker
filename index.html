@@ -5,17 +5,25 @@
 
 <style>
   :root {
-    --bg:      #131519;
+    --bg:      #0f1115;
     --panel:   #1b1e24;
     --line:    #2a2f38;
-    --text:    #e9ebef;
-    --dim:     #8b93a3;
-    --faint:   #5a6272;
-    --train:   #d9694a;
-    --food:    #c9a227;
-    --water:   #4e9bc4;
-    --done:    #57b08f;
-    --skip:    #b5544f;
+    --text:    #f3f5f9;
+    --dim:     #99a1b3;
+    --faint:   #5f6779;
+    --train:   #ff7a4a;
+    --train2:  #ff4d6d;
+    --food:    #ffce45;
+    --food2:   #ff9f43;
+    --water:   #37b6ff;
+    --water2:  #5ee6d0;
+    --done:    #34d399;
+    --done2:   #22c55e;
+    --skip:    #f0555a;
+    --grad-train: linear-gradient(135deg, var(--train), var(--train2));
+    --grad-food:  linear-gradient(135deg, var(--food), var(--food2));
+    --grad-water: linear-gradient(135deg, var(--water), var(--water2));
+    --grad-done:  linear-gradient(135deg, var(--done), var(--done2));
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
@@ -42,12 +50,38 @@
   .date-sub { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 2px; }
 
   .dayhead { padding: 20px 0 6px; }
+  .dayhead-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .kind { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; }
-  .kind.t { color: var(--train); }
+  .kind.t { color: var(--train); text-shadow: 0 0 12px rgba(255,122,74,.45); }
   .kind.r { color: var(--faint); }
   .kind.s { color: var(--skip); }
   .daytitle { font-size: 25px; font-weight: 650; letter-spacing: -.02em; margin: 3px 0 0; }
   .daynote { color: var(--dim); font-size: 13.5px; margin-top: 7px; }
+
+  .streak-badge {
+    display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+    background: linear-gradient(135deg, rgba(255,122,74,.18), rgba(255,77,109,.18));
+    border: 1px solid rgba(255,122,74,.4); border-radius: 999px;
+    padding: 3px 9px 3px 7px; font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: #ffb289; animation: badgein .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .streak-badge .flame { font-size: 12px; filter: drop-shadow(0 0 4px rgba(255,122,74,.7)); }
+
+  .cycle-bar {
+    height: 5px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 14px;
+    position: relative;
+  }
+  .cycle-fill {
+    height: 100%; border-radius: 999px; background: var(--grad-train); width: 0%;
+    transition: width .5s cubic-bezier(.34,1.2,.64,1); position: relative; overflow: hidden;
+  }
+  .cycle-fill::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    animation: shimmer 2.2s ease-in-out infinite;
+  }
+  @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+  @keyframes badgein { 0% { transform: scale(.6); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
   .mod { margin: 26px 0 0; }
   .mod-head {
@@ -70,12 +104,17 @@
   .row:last-child { border-bottom: none; }
   .box {
     width: 19px; height: 19px; flex-shrink: 0; margin-top: 1px;
-    border: 1.5px solid var(--line); border-radius: 5px;
+    border: 1.5px solid var(--line); border-radius: 6px;
     display: grid; place-items: center; cursor: pointer; transition: all .16s;
   }
   .box svg { width: 11px; height: 11px; opacity: 0; }
-  .row.on .box { background: var(--done); border-color: var(--done); }
+  .row.on .box {
+    background: var(--grad-done); border-color: transparent;
+    box-shadow: 0 0 0 4px rgba(52,211,153,.14), 0 2px 8px rgba(52,211,153,.35);
+  }
   .row.on .box svg { opacity: 1; }
+  .box.pop { animation: boxpop .32s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes boxpop { 0% { transform: scale(.6); } 55% { transform: scale(1.25); } 100% { transform: scale(1); } }
   .row.on .r-name { color: var(--faint); }
   .r-body { flex: 1; min-width: 0; }
   .r-name { font-size: 14.5px; line-height: 1.4; transition: color .16s; }
@@ -97,17 +136,26 @@
     width: 26px; height: 32px; border-radius: 3px 3px 7px 7px;
     border: 1.5px solid var(--line); cursor: pointer; transition: all .16s;
   }
-  .glass.on { background: var(--water); border-color: var(--water); }
-  .water-n { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--water); }
+  .glass.on {
+    background: var(--grad-water); border-color: transparent;
+    box-shadow: 0 2px 8px rgba(55,182,255,.35);
+  }
+  .glass.pop { animation: boxpop .32s cubic-bezier(.34,1.56,.64,1); }
+  .water-n { font-family: var(--mono); font-size: 20px; font-variant-numeric: tabular-nums; color: var(--water); transition: transform .2s; }
   .water-n span { font-size: 12px; color: var(--faint); }
 
   .btn {
-    width: 100%; padding: 12px; border-radius: 8px; cursor: pointer;
+    width: 100%; padding: 12px; border-radius: 10px; cursor: pointer;
     background: none; border: 1px solid var(--line); color: var(--dim); font-size: 14px;
+    transition: transform .12s, background .12s;
   }
-  .btn:active { background: var(--panel); }
-  .btn-skip { color: var(--skip); border-color: rgba(181,84,79,.4); }
-  .btn-main { background: var(--train); border-color: var(--train); color: #17110e; font-weight: 600; }
+  .btn:active { background: var(--panel); transform: scale(.97); }
+  .btn-skip { color: var(--skip); border-color: rgba(240,85,90,.4); }
+  .btn-main {
+    background: var(--grad-train); border-color: transparent; color: #1a0f0a; font-weight: 650;
+    box-shadow: 0 4px 16px rgba(255,77,109,.3);
+  }
+  .btn-main:active { transform: scale(.97); box-shadow: 0 2px 8px rgba(255,77,109,.25); }
   .btnrow { display: flex; gap: 8px; margin-top: 22px; }
 
   /* --- слоты редактирования --- */
@@ -235,14 +283,42 @@
 
   nav {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
-    background: rgba(19,21,25,.95); backdrop-filter: blur(12px);
+    background: rgba(15,17,21,.92); backdrop-filter: blur(12px);
     border-top: 1px solid var(--line); display: flex;
     padding-bottom: env(safe-area-inset-bottom);
   }
-  nav button { flex: 1; background: none; border: none; color: var(--faint); font-size: 12px; padding: 12px 2px 14px; cursor: pointer; }
-  nav button.on { color: var(--train); }
+  nav button {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; color: var(--faint); font-size: 11px; padding: 10px 2px 12px; cursor: pointer;
+    transition: color .15s;
+  }
+  nav button .nav-ic { font-size: 18px; line-height: 1; transition: transform .18s cubic-bezier(.34,1.56,.64,1), filter .18s; filter: grayscale(1) opacity(.7); }
+  nav button.on { color: var(--text); }
+  nav button.on .nav-ic { transform: translateY(-1px) scale(1.12); filter: grayscale(0) opacity(1) drop-shadow(0 0 6px rgba(255,122,74,.5)); }
 
-  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+  .toast {
+    position: fixed; left: 50%; bottom: 90px; z-index: 60;
+    transform: translateX(-50%) translateY(10px); opacity: 0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 18px; font-size: 14px; font-weight: 600; color: var(--text);
+    box-shadow: 0 8px 24px rgba(0,0,0,.4); display: flex; align-items: center; gap: 8px;
+    transition: opacity .25s, transform .25s; pointer-events: none; white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  #confetti { position: fixed; inset: 0; z-index: 55; pointer-events: none; overflow: hidden; }
+  .confetti-bit {
+    position: absolute; top: -10px; width: 7px; height: 10px; border-radius: 2px;
+    animation: confetti-fall linear forwards;
+  }
+  @keyframes confetti-fall {
+    0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(600deg); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
 </style>
 
 <div class="wrap hidden" id="onb">
@@ -273,9 +349,13 @@
       <button class="nav-b" id="next">›</button>
     </div>
     <div class="dayhead">
-      <div class="kind" id="d-kind"></div>
+      <div class="dayhead-top">
+        <div class="kind" id="d-kind"></div>
+        <div class="streak-badge hidden" id="d-streak"><span class="flame">🔥</span><span id="d-streak-n"></span></div>
+      </div>
       <h1 class="daytitle" id="d-title">—</h1>
       <div class="daynote" id="d-note"></div>
+      <div class="cycle-bar"><div class="cycle-fill" id="d-cyclefill"></div></div>
     </div>
     <div id="d-body"></div>
     <div class="btnrow" id="d-actions"></div>
@@ -369,12 +449,15 @@
 </div>
 
 <nav id="nav" class="hidden">
-  <button data-v="day" class="on">Сегодня</button>
-  <button data-v="cal">Календарь</button>
-  <button data-v="stat">Стата</button>
-  <button data-v="friends" id="nav-friends" class="hidden">Друзья</button>
-  <button data-v="more">Ещё</button>
+  <button data-v="day" class="on"><span class="nav-ic">🏋️</span>Сегодня</button>
+  <button data-v="cal"><span class="nav-ic">📅</span>Календарь</button>
+  <button data-v="stat"><span class="nav-ic">📈</span>Стата</button>
+  <button data-v="friends" id="nav-friends" class="hidden"><span class="nav-ic">👥</span>Друзья</button>
+  <button data-v="more"><span class="nav-ic">⚙️</span>Ещё</button>
 </nav>
+
+<div id="confetti"></div>
+<div class="toast" id="toast"></div>
 
 <script>
 /* ==================== БИБЛИОТЕКА УПРАЖНЕНИЙ ==================== */
@@ -679,6 +762,42 @@ function planIdx(d) { const n = daysBetween(parseISO(P.start), d); return ((n % 
 function isFuture(d) { return daysBetween(new Date(), d) > 0; }
 function haptic(s) { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(s || "light"); } catch (e) {} }
 
+/* ==================== МИКРОАНИМАЦИИ ==================== */
+
+function popEl(sel) {
+  requestAnimationFrame(() => {
+    const el = document.querySelector(sel);
+    if (!el) return;
+    el.classList.add("pop");
+    el.addEventListener("animationend", () => el.classList.remove("pop"), { once: true });
+  });
+}
+
+let toastTimer = null;
+function showToast(text) {
+  const t = $("toast");
+  t.textContent = text;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+const CONFETTI_COLORS = ["#ff7a4a", "#ff4d6d", "#ffce45", "#37b6ff", "#34d399"];
+function burstConfetti() {
+  const box = $("confetti");
+  const n = 26;
+  for (let i = 0; i < n; i++) {
+    const bit = document.createElement("div");
+    bit.className = "confetti-bit";
+    bit.style.left = (Math.random() * 100) + "vw";
+    bit.style.background = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+    bit.style.animationDuration = (1.6 + Math.random() * 1.1) + "s";
+    bit.style.animationDelay = (Math.random() * .25) + "s";
+    box.appendChild(bit);
+    bit.addEventListener("animationend", () => bit.remove());
+  }
+}
+
 function day(key) {
   if (!DAYS[key]) {
     DAYS[key] = { ex: {}, log: {}, meals: {}, swap: {}, water: 0, cre: false, skip: null };
@@ -815,6 +934,12 @@ function renderDay() {
   $("d-title").textContent = skipped ? "День пропущен" : (isTrain ? plan.name : "День отдыха");
   $("d-note").textContent = skipped ? ("Причина: " + d.skip) : (plan.note || "");
 
+  const streakN = computeStats().streak;
+  const streakEl = $("d-streak");
+  if (streakN > 1) { streakEl.classList.remove("hidden"); $("d-streak-n").textContent = streakN; }
+  else streakEl.classList.add("hidden");
+  $("d-cyclefill").style.width = Math.round((pi + 1) / 14 * 100) + "%";
+
   let html = "";
 
   if (isTrain && !skipped) {
@@ -888,15 +1013,24 @@ function renderDay() {
 
 function bindDay(key, pi) {
   document.querySelectorAll("[data-tex]").forEach(el => el.onclick = () => {
-    const d = day(key); d.ex[el.dataset.tex] = !d.ex[el.dataset.tex];
-    haptic("medium"); queueDay(key); renderDay();
+    const d = day(key), i = el.dataset.tex;
+    const willOn = !d.ex[i];
+    d.ex[i] = willOn;
+    const allDone = willOn && PLAN.days[pi].ex.every((_, j) => d.ex[j]);
+    haptic(allDone ? "heavy" : "medium");
+    queueDay(key); renderDay();
+    if (willOn) popEl(`[data-tex="${i}"]`);
+    if (allDone) { burstConfetti(); showToast("Тренировка закрыта 💪"); }
   });
   document.querySelectorAll("[data-log]").forEach(el => {
     el.onchange = () => { const d = day(key); d.log[el.dataset.log] = el.value; queueDay(key); };
   });
   document.querySelectorAll("[data-tmeal]").forEach(el => el.onclick = () => {
-    const d = day(key); d.meals[el.dataset.tmeal] = !d.meals[el.dataset.tmeal];
+    const d = day(key), i = el.dataset.tmeal;
+    const willOn = !d.meals[i];
+    d.meals[i] = willOn;
     haptic("light"); queueDay(key); renderDay();
+    if (willOn) popEl(`[data-tmeal="${i}"]`);
   });
   document.querySelectorAll("[data-swap]").forEach(el => el.onclick = async () => {
     const i = el.dataset.swap, d = day(key);
@@ -911,11 +1045,17 @@ function bindDay(key, pi) {
   });
   document.querySelectorAll("[data-glass]").forEach(el => el.onclick = () => {
     const d = day(key), i = +el.dataset.glass;
+    const filling = d.water !== i + 1;
     d.water = (d.water === i + 1) ? i : i + 1;
     haptic("light"); queueDay(key); renderDay();
+    if (filling) popEl(`[data-glass="${i}"]`);
   });
   const cre = document.querySelector("[data-cre]");
-  if (cre) cre.onclick = () => { const d = day(key); d.cre = !d.cre; haptic("light"); queueDay(key); renderDay(); };
+  if (cre) cre.onclick = () => {
+    const d = day(key); const willOn = !d.cre; d.cre = willOn;
+    haptic("light"); queueDay(key); renderDay();
+    if (willOn) popEl('[data-cre="1"]');
+  };
 
   const chev = $("food-chev");
   if (chev) chev.onclick = () => { P.foodCollapsed = !P.foodCollapsed; saveProfile(); renderDay(); };
