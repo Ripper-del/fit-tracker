@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Цикл · 14 дней</title>
+<title>Программа · 14 дней</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
 <style>
@@ -51,14 +51,20 @@
 
   .mod { margin: 26px 0 0; }
   .mod-head {
-    display: flex; align-items: baseline; justify-content: space-between;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
     padding-bottom: 10px; margin-bottom: 4px; border-bottom: 1px solid var(--line);
   }
   .mod-name { font-family: var(--mono); font-size: 11px; letter-spacing: .05em; }
   .mod-name.t { color: var(--train); }
   .mod-name.f { color: var(--food); }
   .mod-name.w { color: var(--water); }
+  .mod-right { display: flex; align-items: center; gap: 12px; }
   .mod-count { font-family: var(--mono); font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .mod-act {
+    background: none; border: none; color: var(--faint); cursor: pointer;
+    font-size: 12px; padding: 0; text-decoration: underline; text-underline-offset: 2px;
+  }
+  .chev { color: var(--faint); font-size: 12px; cursor: pointer; user-select: none; }
 
   .row { display: flex; gap: 11px; padding: 11px 0; align-items: flex-start; border-bottom: 1px solid rgba(42,47,56,.55); }
   .row:last-child { border-bottom: none; }
@@ -83,12 +89,6 @@
   }
   .logfield::placeholder { color: var(--faint); }
   .logfield:focus { outline: none; border-color: var(--train); }
-
-  .swap {
-    background: none; border: none; color: var(--faint);
-    font-size: 12px; padding: 5px 0 0; cursor: pointer;
-    text-decoration: underline; text-underline-offset: 2px;
-  }
   .swapped { color: var(--food); font-family: var(--mono); font-size: 11px; margin-top: 3px; }
 
   .water-wrap { display: flex; align-items: center; gap: 14px; padding: 16px 0 4px; }
@@ -110,6 +110,46 @@
   .btn-main { background: var(--train); border-color: var(--train); color: #17110e; font-weight: 600; }
   .btnrow { display: flex; gap: 8px; margin-top: 22px; }
 
+  /* --- слоты редактирования --- */
+  .slot {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 9px; padding: 11px 12px; margin-bottom: 8px;
+  }
+  .slot-n {
+    font-family: var(--mono); font-size: 11px; color: var(--faint);
+    width: 16px; flex-shrink: 0; font-variant-numeric: tabular-nums;
+  }
+  .slot-body { flex: 1; min-width: 0; cursor: pointer; }
+  .slot-name { font-size: 14.5px; line-height: 1.35; }
+  .slot-name.empty { color: var(--faint); }
+  .slot-sets {
+    width: 88px; flex-shrink: 0; background: var(--bg);
+    border: 1px solid var(--line); border-radius: 6px; color: var(--text);
+    padding: 7px 8px; font-family: var(--mono); font-size: 12px; text-align: center;
+  }
+  .slot-sets:focus { outline: none; border-color: var(--train); }
+  .slot-x {
+    background: none; border: none; color: var(--faint);
+    font-size: 18px; line-height: 1; padding: 4px 2px; cursor: pointer; flex-shrink: 0;
+  }
+  .slot-add {
+    width: 100%; padding: 12px; border-radius: 9px; cursor: pointer;
+    background: none; border: 1px dashed var(--line); color: var(--faint); font-size: 14px;
+  }
+  .meal-slot { display: block; }
+  .meal-slot .slot-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .meal-name {
+    flex: 1; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--text); padding: 8px 10px; font-size: 13px;
+  }
+  .meal-text {
+    width: 100%; background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--text); padding: 9px 10px; font-size: 13.5px; line-height: 1.45;
+    resize: vertical; min-height: 62px;
+  }
+  .meal-name:focus, .meal-text:focus { outline: none; border-color: var(--food); }
+
   .cal-head { display: flex; align-items: center; justify-content: space-between; margin: 20px 0 14px; }
   .cal-m { font-size: 18px; font-weight: 600; }
   .grid7 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
@@ -129,9 +169,9 @@
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; font-size: 12px; color: var(--dim); }
   .legend i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: middle; }
 
-  .metric { display: flex; justify-content: space-between; align-items: baseline; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .metric { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); }
   .metric-k { font-size: 14px; color: var(--dim); }
-  .metric-v { font-family: var(--mono); font-size: 17px; font-variant-numeric: tabular-nums; }
+  .metric-v { font-family: var(--mono); font-size: 17px; font-variant-numeric: tabular-nums; flex-shrink: 0; }
   .metric-v.good { color: var(--done); }
   .metric-v.bad { color: var(--skip); }
 
@@ -163,31 +203,35 @@
   .onb-title { font-size: 27px; font-weight: 650; letter-spacing: -.02em; line-height: 1.2; }
   .onb-sub { color: var(--dim); font-size: 14px; margin: 10px 0 26px; line-height: 1.5; }
 
-  /* диалог вместо prompt(), который Telegram на iOS не показывает */
-  #modal {
-    position: fixed; inset: 0; z-index: 50;
-    background: rgba(9,10,12,.72);
-    display: flex; align-items: flex-end; justify-content: center;
-  }
+  /* --- диалоги: prompt() в мини-апках на iOS заблокирован --- */
+  #modal { position: fixed; inset: 0; z-index: 50; background: rgba(9,10,12,.72); display: flex; align-items: flex-end; justify-content: center; }
   .sheet {
-    width: 100%; max-width: 620px;
-    background: var(--bg); border-top: 1px solid var(--line);
-    border-radius: 16px 16px 0 0; padding: 22px 16px calc(20px + env(safe-area-inset-bottom));
-    max-height: 85vh; overflow-y: auto;
+    width: 100%; max-width: 620px; background: var(--bg);
+    border-top: 1px solid var(--line); border-radius: 16px 16px 0 0;
+    padding: 20px 15px calc(18px + env(safe-area-inset-bottom));
+    max-height: 88vh; overflow-y: auto;
   }
   .sheet-t { font-size: 17px; font-weight: 600; margin-bottom: 14px; }
-  .sheet input {
+  .sheet input, .sheet textarea {
     width: 100%; background: var(--panel); border: 1px solid var(--line);
     border-radius: 8px; color: var(--text); padding: 12px; margin-bottom: 10px;
   }
-  .sheet input:focus { outline: none; border-color: var(--train); }
+  .sheet input:focus, .sheet textarea:focus { outline: none; border-color: var(--train); }
   .choice {
     width: 100%; text-align: left; padding: 13px 14px; margin-bottom: 7px;
     background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
     color: var(--text); font-size: 14.5px; cursor: pointer;
   }
   .choice:active { border-color: var(--train); }
+  .choice small { display: block; color: var(--faint); font-size: 11.5px; margin-top: 3px; font-family: var(--mono); }
   .sheet-btns { display: flex; gap: 8px; margin-top: 12px; }
+  .grp { font-family: var(--mono); font-size: 11px; color: var(--train); letter-spacing: .05em; margin: 16px 0 7px; }
+  .grp:first-child { margin-top: 4px; }
+  .pick {
+    padding: 11px 12px; border-bottom: 1px solid rgba(42,47,56,.55);
+    font-size: 14.5px; cursor: pointer;
+  }
+  .pick:active { color: var(--train); }
 
   nav {
     position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
@@ -202,19 +246,19 @@
 </style>
 
 <div class="wrap hidden" id="onb">
-  <div class="onb-title">Цикл на 14 дней</div>
-  <p class="onb-sub">Тренировки, питание и вода в одном месте. Стартовые данные нужны, чтобы считать прогресс и разложить цикл по датам.</p>
+  <div class="onb-title">Программа на 14 дней</div>
+  <p class="onb-sub">Тренировки, питание и вода в одном месте. Стартовые данные нужны, чтобы считать прогресс и разложить программу по датам.</p>
 
   <div class="field two">
     <div><label>Вес, кг</label><input type="number" id="o-w" inputmode="decimal" placeholder="95"></div>
     <div><label>Рост, см</label><input type="number" id="o-t" inputmode="decimal" placeholder="180"></div>
   </div>
-  <div class="field"><label>Первый день цикла</label><input type="date" id="o-d"></div>
+  <div class="field"><label>Первый день программы</label><input type="date" id="o-d"></div>
   <div class="field"><label>Обычное время тренировки</label>
     <select id="o-time"><option value="18">18:00</option><option value="19">19:00</option></select></div>
   <div class="field"><label>Норма воды, стаканов по 300 мл</label><input type="number" id="o-g" inputmode="numeric" value="9"></div>
-  <button class="btn btn-main" id="o-go" style="margin-top:8px">Начать цикл</button>
-  <p class="info" style="margin-top:22px">День 1 цикла — тренировка A. Дальше приложение само разложит четырнадцатидневную схему по календарю и будет повторять её месяц за месяцем.</p>
+  <button class="btn btn-main" id="o-go" style="margin-top:8px">Начать</button>
+  <p class="info" style="margin-top:22px">Программа загрузится готовой, но каждую тренировку и каждый приём пищи можно переписать под себя — кнопка «изменить» на дне.</p>
 </div>
 
 <div id="app" class="hidden">
@@ -235,6 +279,18 @@
     </div>
     <div id="d-body"></div>
     <div class="btnrow" id="d-actions"></div>
+  </div>
+
+  <div class="wrap hidden" id="view-edit">
+    <div class="datebar">
+      <button class="nav-b" id="e-back">‹</button>
+      <div class="dateinfo">
+        <div class="date-main" id="e-head">Изменить</div>
+        <div class="date-sub" id="e-sub"></div>
+      </div>
+      <div style="width:32px"></div>
+    </div>
+    <div id="e-body"></div>
   </div>
 
   <div class="wrap hidden" id="view-cal">
@@ -265,28 +321,41 @@
     <div id="s-list"></div>
   </div>
 
+  <div class="wrap hidden" id="view-friends">
+    <h2 class="vt">Общий прогресс</h2>
+    <p class="vs">Все, кто пользуется этим ботом и разрешил себя показывать.</p>
+    <div id="f-list"></div>
+    <div class="sub">ВИДИМОСТЬ</div>
+    <div class="row" id="f-share-row">
+      <div class="box" id="f-share"></div>
+      <div class="r-body"><div class="r-name">Показывать меня в общем прогрессе</div>
+        <div class="r-meta">Выключишь — исчезнешь из списка у всех</div></div>
+    </div>
+  </div>
+
   <div class="wrap hidden" id="view-more">
     <h2 class="vt">Настройки</h2>
-    <p class="vs">Стартовые данные, напоминания и выгрузка.</p>
+    <p class="vs">Стартовые данные, шаблоны и выгрузка.</p>
     <div class="field two">
       <div><label>Стартовый вес, кг</label><input type="number" id="m-w" inputmode="decimal"></div>
       <div><label>Рост, см</label><input type="number" id="m-t" inputmode="decimal"></div>
     </div>
-    <div class="field"><label>Первый день цикла</label><input type="date" id="m-d"></div>
+    <div class="field"><label>Первый день программы</label><input type="date" id="m-d"></div>
     <div class="field two">
       <div><label>Время тренировки</label><select id="m-time"><option value="18">18:00</option><option value="19">19:00</option></select></div>
       <div><label>Норма воды</label><input type="number" id="m-g" inputmode="numeric"></div>
     </div>
     <button class="btn" id="m-save">Сохранить</button>
 
-    <div class="sub">НАПОМИНАНИЯ</div>
-    <p class="info">Пуши шлёт бот, а не это приложение — страница живёт, только пока открыта. Файл <code>bot.py</code> поднимается на твоём VPS и присылает: в 13:00 — что за тренировка сегодня, в 17:30 — за час до зала, и воду каждые два часа. В дни отдыха текст другой.</p>
+    <div class="sub">СОХРАНЁННЫЕ ТРЕНИРОВКИ</div>
+    <div id="m-tpl"></div>
 
     <div class="sub">ДАННЫЕ</div>
     <button class="btn" id="m-exp">Показать все данные для копирования</button>
     <textarea id="m-json" class="logfield hidden" rows="7" readonly style="margin-top:10px"></textarea>
+    <button class="btn" id="m-plan" style="margin-top:10px">Вернуть исходную программу</button>
     <button class="btn btn-skip" id="m-reset" style="margin-top:10px">Сбросить всё</button>
-    <p class="info" style="margin-top:20px">План тренировок и рацион здесь твои — я их только разложил по дням и ничего не менял. Если вес встанет надолго, начнутся боли или поедет самочувствие, это вопрос к врачу или тренеру, а не к приложению.</p>
+    <p class="info" style="margin-top:20px">Питание в исходной программе рассчитано под конкретного человека. Если делишься приложением — под себя его должен настраивать каждый сам.</p>
   </div>
 
 </div>
@@ -303,155 +372,208 @@
   <button data-v="day" class="on">Сегодня</button>
   <button data-v="cal">Календарь</button>
   <button data-v="stat">Стата</button>
+  <button data-v="friends" id="nav-friends" class="hidden">Друзья</button>
   <button data-v="more">Ещё</button>
 </nav>
 
 <script>
-/* ==================== DATA ==================== */
+/* ==================== БИБЛИОТЕКА УПРАЖНЕНИЙ ==================== */
 
-const WORKOUTS = {
-  A: { name: "Тренировка A", ex: [
-    ["Приседания со штангой на спине (или в Смите)", "4 × 8–10"],
-    ["Жим штанги лёжа на горизонтальной скамье", "4 × 8–10"],
-    ["Тяга верхнего блока к груди широким хватом", "4 × 10–12"],
-    ["Жим гантелей сидя, угол 75–80°", "3 × 10–12"],
-    ["Сгибания рук со штангой стоя", "3 × 12"],
-    ["Скручивания на коврике", "3 × 15–20"]
-  ]},
-  B: { name: "Тренировка B", ex: [
-    ["Румынская тяга со штангой или гантелями", "4 × 10–12"],
-    ["Жим гантелей на наклонной скамье, 30°", "4 × 10–12"],
-    ["Горизонтальная рычажная тяга (или нижний блок)", "4 × 10–12"],
-    ["Махи гантелями через стороны стоя", "4 × 12–15"],
-    ["Французский жим лёжа с EZ-грифом", "3 × 10–12"],
-    ["Подъём ног в упоре на брусьях", "3 × 12–15"]
-  ]},
-  C: { name: "Тренировка C", ex: [
-    ["Жим ногами в тренажёре", "4 × 10–12"],
-    ["Сгибания ног сидя или лёжа", "4 × 12–15"],
-    ["Сведения рук в бабочке или кроссовере", "3 × 12–15"],
-    ["Тяга горизонтального блока нейтральным хватом", "4 × 10–12"],
-    ["Сгибания с гантелями хватом «молот»", "3 × 12"],
-    ["Разгибания рук на верхнем блоке с канатом", "3 × 12–15"]
-  ]},
-  D: { name: "Тренировка D", note: "Попробуй добавить по одному повторению в подходах против дня 1.", ex: [
-    ["Приседания в Смите или со штангой", "4 × 8–10"],
-    ["Жим штанги лёжа", "4 × 8–10"],
-    ["Тяга верхнего блока параллельным хватом", "4 × 10–12"],
-    ["Жим сидя в тренажёре для плеч", "3 × 10–12"],
-    ["Подъём штанги на скамье Скотта", "3 × 10–12"],
-    ["Скручивания на наклонной скамье", "3 × 15"]
-  ]},
-  E: { name: "Тренировка E", ex: [
-    ["Гиперэкстензия с лёгким блином у груди", "4 × 12–15"],
-    ["Жим гантелей на горизонтальной скамье", "4 × 10–12"],
-    ["Тяга верхнего блока обратным хватом", "4 × 10–12"],
-    ["Махи в стороны с упором грудью в наклонную", "4 × 12–15"],
-    ["Разгибания в кроссовере с прямой рукоятью", "3 × 12"],
-    ["Подъём коленей к груди в висе", "3 × 12–15"]
-  ]},
-  F: { name: "Тренировка F", ex: [
-    ["Жим ногами, высокая широкая постановка стоп", "4 × 10–12"],
-    ["Разгибания ног в тренажёре сидя", "3 × 12–15"],
-    ["Жим гантелей на наклонной скамье, 30°", "4 × 10–12"],
-    ["Тяга Т-грифа с упором грудью", "4 × 10–12"],
-    ["Махи в наклоне на заднюю дельту", "4 × 15"],
-    ["Суперсет: бицепс сидя 3 × 12 + канат на трицепс 3 × 12", "суперсет"]
-  ]}
+const LIB = {
+  "Ноги": [
+    "Приседания со штангой на спине", "Приседания в Смите", "Фронтальные приседания",
+    "Приседания с гантелей (гоблет)", "Гакк-приседания", "Жим ногами",
+    "Жим ногами, узкая постановка", "Жим ногами, высокая широкая постановка",
+    "Выпады с гантелями", "Болгарские выпады", "Разгибания ног сидя",
+    "Сгибания ног лёжа", "Сгибания ног сидя", "Румынская тяга",
+    "Становая тяга", "Ягодичный мост", "Подъёмы на носки стоя", "Подъёмы на носки сидя"
+  ],
+  "Грудь": [
+    "Жим штанги лёжа", "Жим штанги на наклонной скамье", "Жим гантелей лёжа",
+    "Жим гантелей на наклонной скамье, 30°", "Жим в тренажёре сидя",
+    "Сведения рук в бабочке", "Сведения в кроссовере", "Отжимания на брусьях",
+    "Отжимания от пола", "Пуловер с гантелей"
+  ],
+  "Спина": [
+    "Тяга верхнего блока к груди широким хватом", "Тяга верхнего блока параллельным хватом",
+    "Тяга верхнего блока обратным хватом", "Подтягивания", "Подтягивания в гравитроне",
+    "Тяга горизонтального блока к поясу", "Тяга горизонтального блока нейтральным хватом",
+    "Горизонтальная рычажная тяга", "Тяга Т-грифа с упором грудью",
+    "Тяга штанги в наклоне", "Тяга гантели одной рукой", "Гиперэкстензия", "Шраги с гантелями"
+  ],
+  "Плечи": [
+    "Жим сидя в тренажёре для плеч", "Жим гантелей сидя", "Жим штанги стоя",
+    "Махи гантелями через стороны стоя", "Махи с упором грудью в наклонную",
+    "Махи в наклоне на заднюю дельту", "Разведения в тренажёре на заднюю дельту",
+    "Тяга к подбородку", "Подъёмы гантелей перед собой"
+  ],
+  "Бицепс": [
+    "Сгибания рук со штангой стоя", "Сгибания с EZ-грифом", "Сгибания с гантелями сидя",
+    "Сгибания хватом «молот»", "Подъём штанги на скамье Скотта",
+    "Сгибания в кроссовере", "Концентрированные сгибания"
+  ],
+  "Трицепс": [
+    "Разгибания на верхнем блоке с канатом", "Разгибания на блоке с прямой рукоятью",
+    "Французский жим лёжа с EZ-грифом", "Французский жим сидя", "Жим узким хватом",
+    "Отжимания на брусьях узким хватом", "Разгибания из-за головы с гантелей", "Кикбэк с гантелей"
+  ],
+  "Пресс": [
+    "Скручивания на коврике", "Скручивания на наклонной скамье", "Скручивания в тренажёре",
+    "Подъём ног в упоре на брусьях", "Подъём коленей к груди в висе",
+    "Подъём ног в висе", "Планка", "Русские скручивания", "Ролик для пресса"
+  ],
+  "Кардио": [
+    "Ходьба в гору на дорожке", "Беговая дорожка", "Эллипс",
+    "Велотренажёр", "Гребной тренажёр", "Скакалка", "Степпер"
+  ]
 };
 
-const CARDIO = "Кардио: 15–20 мин ходьбы в гору на дорожке";
+/* ==================== ИСХОДНАЯ ПРОГРАММА ==================== */
 
-const CYCLE = [
-  { w: "A" },
-  { r: "Восстановление, 8–10 тысяч шагов пешком, креатин 5 г." },
-  { w: "B" },
-  { r: "Восстановление, норма воды, шаги." },
-  { w: "C" },
-  { r: "Лёгкая прогулка, полноценный сон." },
-  { r: "Подготовка еды на неделю, замеры веса натощак." },
-  { w: "D" },
-  { r: "Восстановление, 8–10 тысяч шагов пешком, креатин 5 г." },
-  { w: "E" },
-  { r: "Восстановление, контроль питания." },
-  { w: "F" },
-  { r: "Пассивный отдых, прогулка на свежем воздухе." },
-  { r: "Фиксация результатов: взвешивание, замеры талии. Подготовка к новому циклу." }
-];
+const CARDIO_NOTE = "Кардио: 15–20 мин ходьбы в гору на дорожке";
 
-const MEALS = [
-  [ "Яичница из 3 яиц (капля масла) + овсянка 45 г сухой на воде + ягоды 100 г",
-    "Куриное филе 180 г на гриле + гречка 50 г сухой + салат из огурца и помидора 200 г + оливковое масло 5 г",
-    "Протеин 30 г на воде + банан 120 г",
-    "Минтай или хек 220 г запечённый + отварной картофель 180 г + брокколи 200 г + масло 5 г" ],
-  [ "Омлет из 3 яиц со шпинатом 100 г + 2 ржаных хлебца 20 г",
-    "Филе индейки 180 г + рис басмати 50 г сухой + пекинская капуста с огурцом 200 г + льняное масло 5 г",
-    "Протеин 30 г на воде + зелёное яблоко 150 г",
-    "Постная говядина 170 г тушёная + макароны твёрдых сортов 45 г сухих + тушёные кабачки 200 г" ],
-  [ "Творог 5% 180 г + банан 100 г + ягоды 100 г",
-    "Куриное филе 180 г в специях + булгур 50 г сухой + свежие овощи 200 г + оливковое масло 5 г",
-    "Протеин 30 г на воде + 2 рисовых хлебца с арахисовой пастой 15 г",
-    "Треска 220 г на пару + запечённый картофель 180 г + квашеная капуста 150 г" ],
-  [ "3 вареных яйца + тост из цельнозернового хлеба 40 г + свежий огурец 100 г",
-    "Фарш из куриной грудки 180 г с томатами + гречка 50 г сухой + зелень и салат 150 г + масло 5 г",
-    "Протеин 30 г на воде + банан 120 г",
-    "Филе индейки 170 г + кускус 45 г сухой + стручковая фасоль на пару 200 г + масло 5 г" ],
-  [ "Овсяноблин: 2 яйца + 45 г молотых хлопьев + 1 яйцо всмятку + ягоды 80 г",
-    "Постная говядина 170 г запечённая + рис басмати 50 г сухой + капустный салат с морковью 200 г + масло 5 г",
-    "Протеин 30 г на воде + груша или апельсин 150 г",
-    "Судак или хек 220 г в духовке + картофельное пюре на воде 180 г + огурцы 200 г + масло 5 г" ],
-  [ "Глазунья из 3 яиц с шампиньонами 100 г + цельнозерновой хлеб 40 г",
-    "Куриное бедро без кожи 180 г запечённое + гречка 45 г сухой + овощная нарезка 200 г",
-    "Протеин 30 г на воде + банан 120 г",
-    "Кальмары отварные 220 г + рис 45 г сухой + цветная капуста на пару 200 г + масло 5 г" ],
-  [ "Творог 5% 180 г взбить с 15 г протеина и ягодами 100 г + тост 30 г",
-    "Филе индейки 180 г тушёное + макароны твёрдых сортов 50 г сухих + огурец 150 г",
-    "Протеин 15 г на воде + зелёное яблоко 150 г + миндаль 15 г",
-    "Минтай 220 г + картофель в мундире 180 г + листовая зелень 150 г + льняное масло 5 г" ],
-  [ "3 вареных яйца + овсянка 45 г сухой с корицей и тёртым яблоком 100 г",
-    "Куриная грудка 180 г в рукаве + булгур 50 г сухой + пекинская капуста с огурцом 200 г + масло 5 г",
-    "Протеин 30 г на воде + банан 120 г",
-    "Хек 220 г в томатном соке + картофель отварной 180 г + кабачок на гриле 200 г" ],
-  [ "Скрэмбл из 3 яиц с помидорами 100 г + цельнозерновой тост 40 г",
-    "Постная телятина 170 г тушёная + гречка 50 г сухой + квашеная капуста 150 г + масло 5 г",
-    "Протеин 30 г на воде + киви 2 шт, ~140 г",
-    "Филе индейки 170 г на сухой сковороде + макароны 45 г сухих + стручковая фасоль 200 г + масло 5 г" ],
-  [ "Творог 5% 180 г + банан 120 г + щепотка корицы",
-    "Куриное филе 180 г котлетами на пару + рис басмати 50 г сухой + огурцы с зеленью 200 г + масло 5 г",
-    "Протеин 30 г на воде + 2 цельнозерновых хлебца + арахисовая паста 12 г",
-    "Треска или нежирный пангасиус 220 г + запечённый картофель 180 г + брокколи 200 г + масло 5 г" ],
-  [ "Яичница из 3 яиц + овсяные хлопья 45 г на воде + вишня или черника 100 г",
-    "Филе индейки 180 г + киноа или булгур 50 г сухой + помидоры, перец, лук 200 г + масло 5 г",
-    "Протеин 30 г на воде + банан 120 г",
-    "Нежирная говядина 170 г отварная + картофель отварной 180 г + тушёная капуста 200 г + масло 5 г" ],
-  [ "Омлет из 3 яиц с зеленью + цельнозерновой хлеб 40 г + свежий огурец",
-    "Куриное филе 180 г с паприкой + гречка 50 г сухой + морковь с капустой 200 г + льняное масло 5 г",
-    "Протеин 30 г на воде + апельсин или грейпфрут 180 г",
-    "Минтай 220 г на пару с травами + рис 45 г сухой + фасоль или кабачки 200 г + масло 5 г" ],
-  [ "3 вареных яйца всмятку + овсянка 45 г на воде + ягоды 100 г",
-    "Куриные бёдра без кожи 180 г запечённые + макароны 45 г сухих + огурцы с зеленью 200 г",
-    "Протеин 30 г на воде + банан 120 г",
-    "Креветки или мидии 200 г очищенных + рис 45 г сухой + томаты с брокколи 200 г + масло 5 г" ],
-  [ "Творог 5% 180 г + 1 вареное яйцо + ягоды 100 г + хлебец 10 г",
-    "Постная говядина 170 г кубиками + рис 50 г сухой + капуста 200 г + масло 5 г",
-    "Протеин 30 г на воде + зелёное яблоко 150 г + грецкие орехи 15 г",
-    "Хек или судак 220 г в фольге с лимоном + картофель дольками 180 г + салатные листья 150 г + масло 5 г" ]
-];
+function defaultPlan() {
+  const T = (name, ex) => ({ type: "train", name, ex: ex.map(([n, s]) => ({ n, s })), note: CARDIO_NOTE });
+  const R = note => ({ type: "rest", note });
 
-const MEAL_NAMES = ["Завтрак", "Обед", "Перекус", "Ужин"];
+  const days = [
+    T("Тренировка A", [
+      ["Приседания со штангой на спине", "4 × 8–10"],
+      ["Жим штанги лёжа", "4 × 8–10"],
+      ["Тяга верхнего блока к груди широким хватом", "4 × 10–12"],
+      ["Жим гантелей сидя", "3 × 10–12"],
+      ["Сгибания рук со штангой стоя", "3 × 12"],
+      ["Скручивания на коврике", "3 × 15–20"]
+    ]),
+    R("Восстановление, 8–10 тысяч шагов пешком, креатин 5 г."),
+    T("Тренировка B", [
+      ["Румынская тяга", "4 × 10–12"],
+      ["Жим гантелей на наклонной скамье, 30°", "4 × 10–12"],
+      ["Горизонтальная рычажная тяга", "4 × 10–12"],
+      ["Махи гантелями через стороны стоя", "4 × 12–15"],
+      ["Французский жим лёжа с EZ-грифом", "3 × 10–12"],
+      ["Подъём ног в упоре на брусьях", "3 × 12–15"]
+    ]),
+    R("Восстановление, норма воды, шаги."),
+    T("Тренировка C", [
+      ["Жим ногами", "4 × 10–12"],
+      ["Сгибания ног сидя", "4 × 12–15"],
+      ["Сведения рук в бабочке", "3 × 12–15"],
+      ["Тяга горизонтального блока нейтральным хватом", "4 × 10–12"],
+      ["Сгибания хватом «молот»", "3 × 12"],
+      ["Разгибания на верхнем блоке с канатом", "3 × 12–15"]
+    ]),
+    R("Лёгкая прогулка, полноценный сон."),
+    R("Подготовка еды на неделю, замеры веса натощак."),
+    T("Тренировка D", [
+      ["Приседания в Смите", "4 × 8–10"],
+      ["Жим штанги лёжа", "4 × 8–10"],
+      ["Тяга верхнего блока параллельным хватом", "4 × 10–12"],
+      ["Жим сидя в тренажёре для плеч", "3 × 10–12"],
+      ["Подъём штанги на скамье Скотта", "3 × 10–12"],
+      ["Скручивания на наклонной скамье", "3 × 15"]
+    ]),
+    R("Восстановление, 8–10 тысяч шагов пешком, креатин 5 г."),
+    T("Тренировка E", [
+      ["Гиперэкстензия", "4 × 12–15"],
+      ["Жим гантелей лёжа", "4 × 10–12"],
+      ["Тяга верхнего блока обратным хватом", "4 × 10–12"],
+      ["Махи с упором грудью в наклонную", "4 × 12–15"],
+      ["Разгибания на блоке с прямой рукоятью", "3 × 12"],
+      ["Подъём коленей к груди в висе", "3 × 12–15"]
+    ]),
+    R("Восстановление, контроль питания."),
+    T("Тренировка F", [
+      ["Жим ногами, высокая широкая постановка", "4 × 10–12"],
+      ["Разгибания ног сидя", "3 × 12–15"],
+      ["Жим гантелей на наклонной скамье, 30°", "4 × 10–12"],
+      ["Тяга Т-грифа с упором грудью", "4 × 10–12"],
+      ["Махи в наклоне на заднюю дельту", "4 × 15"],
+      ["Сгибания с гантелями сидя", "3 × 12"]
+    ]),
+    R("Пассивный отдых, прогулка на свежем воздухе."),
+    R("Взвешивание, замеры талии, итоги круга.")
+  ];
+
+  const M = (b, o, p, u) => [
+    { n: "Завтрак", t: b }, { n: "Обед", t: o }, { n: "Перекус", t: p }, { n: "Ужин", t: u }
+  ];
+
+  const meals = [
+    M("Яичница из 3 яиц + овсянка 45 г сухой на воде + ягоды 100 г",
+      "Куриное филе 180 г на гриле + гречка 50 г сухой + салат 200 г + масло 5 г",
+      "Протеин 30 г на воде + банан 120 г",
+      "Минтай или хек 220 г + картофель 180 г + брокколи 200 г + масло 5 г"),
+    M("Омлет из 3 яиц со шпинатом 100 г + 2 ржаных хлебца 20 г",
+      "Индейка 180 г + рис басмати 50 г сухой + капуста с огурцом 200 г + масло 5 г",
+      "Протеин 30 г на воде + зелёное яблоко 150 г",
+      "Говядина 170 г тушёная + макароны 45 г сухих + кабачки 200 г"),
+    M("Творог 5% 180 г + банан 100 г + ягоды 100 г",
+      "Куриное филе 180 г + булгур 50 г сухой + овощи 200 г + масло 5 г",
+      "Протеин 30 г + 2 рисовых хлебца с арахисовой пастой 15 г",
+      "Треска 220 г на пару + картофель 180 г + квашеная капуста 150 г"),
+    M("3 вареных яйца + цельнозерновой тост 40 г + огурец 100 г",
+      "Куриный фарш 180 г с томатами + гречка 50 г сухой + зелень 150 г + масло 5 г",
+      "Протеин 30 г на воде + банан 120 г",
+      "Индейка 170 г + кускус 45 г сухой + стручковая фасоль 200 г + масло 5 г"),
+    M("Овсяноблин: 2 яйца + 45 г хлопьев, + 1 яйцо всмятку + ягоды 80 г",
+      "Говядина 170 г + рис басмати 50 г сухой + капустный салат 200 г + масло 5 г",
+      "Протеин 30 г на воде + груша или апельсин 150 г",
+      "Судак или хек 220 г + пюре на воде 180 г + огурцы 200 г + масло 5 г"),
+    M("Глазунья из 3 яиц с шампиньонами 100 г + хлеб 40 г",
+      "Куриное бедро 180 г запечённое + гречка 45 г сухой + овощи 200 г",
+      "Протеин 30 г на воде + банан 120 г",
+      "Кальмары 220 г + рис 45 г сухой + цветная капуста 200 г + масло 5 г"),
+    M("Творог 5% 180 г с 15 г протеина и ягодами 100 г + тост 30 г",
+      "Индейка 180 г тушёная + макароны 50 г сухих + огурец 150 г",
+      "Протеин 15 г + зелёное яблоко 150 г + миндаль 15 г",
+      "Минтай 220 г + картофель в мундире 180 г + зелень 150 г + масло 5 г"),
+    M("3 вареных яйца + овсянка 45 г с корицей и яблоком 100 г",
+      "Куриная грудка 180 г + булгур 50 г сухой + капуста с огурцом 200 г + масло 5 г",
+      "Протеин 30 г на воде + банан 120 г",
+      "Хек 220 г в томате + картофель 180 г + кабачок на гриле 200 г"),
+    M("Скрэмбл из 3 яиц с помидорами 100 г + тост 40 г",
+      "Телятина 170 г тушёная + гречка 50 г сухой + квашеная капуста 150 г + масло 5 г",
+      "Протеин 30 г на воде + киви 2 шт",
+      "Индейка 170 г + макароны 45 г сухих + стручковая фасоль 200 г + масло 5 г"),
+    M("Творог 5% 180 г + банан 120 г + корица",
+      "Куриные котлеты на пару 180 г + рис басмати 50 г сухой + огурцы 200 г + масло 5 г",
+      "Протеин 30 г + 2 хлебца + арахисовая паста 12 г",
+      "Треска 220 г + запечённый картофель 180 г + брокколи 200 г + масло 5 г"),
+    M("Яичница из 3 яиц + овсянка 45 г + вишня или черника 100 г",
+      "Индейка 180 г + киноа или булгур 50 г сухой + овощной салат 200 г + масло 5 г",
+      "Протеин 30 г на воде + банан 120 г",
+      "Говядина 170 г отварная + картофель 180 г + тушёная капуста 200 г + масло 5 г"),
+    M("Омлет из 3 яиц с зеленью + хлеб 40 г + огурец",
+      "Куриное филе 180 г с паприкой + гречка 50 г сухой + морковь с капустой 200 г + масло 5 г",
+      "Протеин 30 г + апельсин или грейпфрут 180 г",
+      "Минтай 220 г на пару + рис 45 г сухой + фасоль или кабачки 200 г + масло 5 г"),
+    M("3 яйца всмятку + овсянка 45 г на воде + ягоды 100 г",
+      "Куриные бёдра 180 г запечённые + макароны 45 г сухих + огурцы с зеленью 200 г",
+      "Протеин 30 г на воде + банан 120 г",
+      "Креветки или мидии 200 г + рис 45 г сухой + томаты с брокколи 200 г + масло 5 г"),
+    M("Творог 5% 180 г + вареное яйцо + ягоды 100 г + хлебец 10 г",
+      "Говядина 170 г кубиками + рис 50 г сухой + капуста 200 г + масло 5 г",
+      "Протеин 30 г + зелёное яблоко 150 г + грецкие орехи 15 г",
+      "Хек или судак 220 г в фольге + картофель 180 г + салатные листья 150 г + масло 5 г")
+  ];
+
+  return { days, meals, templates: [] };
+}
+
 const DOW = ["пн","вт","ср","чт","пт","сб","вс"];
 const MONTHS = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
 const MONTHS_N = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
 const SKIP_REASONS = ["Болезнь", "Работа или учёба", "Не было сил", "Травма", "Другое"];
+const MAX_MEALS = 8;
+const MAX_EX = 20;
 
-/* ==================== STORAGE ==================== */
+/* ==================== ХРАНИЛИЩЕ ==================== */
 
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
 const cs = tg && tg.CloudStorage && tg.CloudStorage.setItem ? tg.CloudStorage : null;
 const memStore = {};
 
-// Cloud Storage иногда не отвечает вообще — без таймаута приложение
-// зависает на загрузке и показывает пустой экран.
 function withTimeout(fn, ms) {
   return new Promise((resolve, reject) => {
     let settled = false;
@@ -462,9 +584,7 @@ function withTimeout(fn, ms) {
         settled = true; clearTimeout(t);
         err ? reject(err) : resolve(val);
       });
-    } catch (e) {
-      if (!settled) { settled = true; clearTimeout(t); reject(e); }
-    }
+    } catch (e) { if (!settled) { settled = true; clearTimeout(t); reject(e); } }
   });
 }
 
@@ -493,89 +613,130 @@ const Store = {
   async clear() {
     for (const k of Object.keys(memStore)) delete memStore[k];
     if (cs) {
-      try {
-        await new Promise(r => cs.getKeys((e, ks) =>
-          ks && ks.length ? cs.removeItems(ks, () => r()) : r()));
-      } catch (e) {}
+      try { await new Promise(r => cs.getKeys((e, ks) => ks && ks.length ? cs.removeItems(ks, () => r()) : r())); } catch (e) {}
     }
     try { Object.keys(localStorage).filter(k => k.startsWith("fit:")).forEach(k => localStorage.removeItem(k)); } catch (e) {}
   }
 };
 
-let P = null, DAYS = {}, INDEX = [], WEIGHTS = [];
-let cur = new Date(), calM = new Date();
+/* ==================== СЕРВЕР ==================== */
+
+const API = "";   // "https://твой-домен" — без него всё работает локально
+
+const initData = tg && tg.initData ? tg.initData : "";
+const online = !!(API && initData);
+
+async function api(path, opts) {
+  opts = opts || {};
+  const r = await fetch(API + path, {
+    method: opts.method || "GET",
+    headers: { "Content-Type": "application/json", "Authorization": "tma " + initData },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  if (!r.ok) throw new Error(path + " → " + r.status);
+  return r.status === 204 ? null : r.json();
+}
+
+function push(path, body, method) {
+  if (!online) return;
+  api(path, { method: method || "PUT", body }).catch(e => console.warn("sync failed", path, e));
+}
+
+const pushDay     = key => push("/day/" + key, DAYS[key]);
+const pushWeights = ()  => push("/weights", WEIGHTS);
+const pushPlan    = ()  => push("/plan", PLAN);
+const pushProfile = ()  => push("/profile", {
+  w0: P.w0, h: P.h, start: P.start, time: P.time, goal: P.goal, share: P.share !== false
+});
+
+/* ==================== СОСТОЯНИЕ ==================== */
+
+let P = null, PLAN = null, DAYS = {}, INDEX = [], WEIGHTS = [];
+let cur = new Date(), calM = new Date(), editIdx = null;
 
 const saveQ = {};
 function queueDay(key) {
   clearTimeout(saveQ[key]);
-  saveQ[key] = setTimeout(() => Store.set("d:" + key, DAYS[key]), 400);
+  saveQ[key] = setTimeout(() => { Store.set("d:" + key, DAYS[key]); pushDay(key); pushSummary(); }, 400);
 }
-function saveProfile() { Store.set("prof", P); }
+function saveProfile() { Store.set("prof", P); pushProfile(); }
 function saveIndex()   { Store.set("idx", INDEX); }
-function saveWeights() { Store.set("wts", WEIGHTS); }
+function saveWeights() { Store.set("wts", WEIGHTS); pushWeights(); }
+function savePlan()    { Store.set("plan", PLAN); pushPlan(); }
 
-/* ==================== HELPERS ==================== */
+/* ==================== УТИЛИТЫ ==================== */
 
 const $ = id => document.getElementById(id);
 const CHECK = '<svg viewBox="0 0 12 12" fill="none"><path d="M2.5 6.2l2.4 2.4 4.6-5" stroke="#131519" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const esc = s => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function iso(d) {
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
 }
 function parseISO(s) { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); }
 function daysBetween(a, b) { return Math.round((parseISO(iso(b)) - parseISO(iso(a))) / 864e5); }
-function cycleIdx(d) { const n = daysBetween(parseISO(P.start), d); return ((n % 14) + 14) % 14; }
+function planIdx(d) { const n = daysBetween(parseISO(P.start), d); return ((n % 14) + 14) % 14; }
 function isFuture(d) { return daysBetween(new Date(), d) > 0; }
 function haptic(s) { try { tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred(s || "light"); } catch (e) {} }
 
-/**
- * Диалог вместо prompt() и confirm(): Telegram на iOS их блокирует.
- * opts: { title, input, placeholder, value, choices, okText }
- * Возвращает строку, выбранный вариант, true, либо null при отмене.
- */
+function day(key) {
+  if (!DAYS[key]) {
+    DAYS[key] = { ex: {}, log: {}, meals: {}, swap: {}, water: 0, cre: false, skip: null };
+    if (!INDEX.includes(key)) { INDEX.push(key); saveIndex(); }
+  }
+  return DAYS[key];
+}
+const dayRO = key => DAYS[key] || null;
+
+/* ==================== ДИАЛОГИ ==================== */
+
 function ask(opts) {
   return new Promise(resolve => {
     const m = $("modal"), body = $("mo-body"), btns = $("mo-btns");
     $("mo-t").textContent = opts.title;
-    body.innerHTML = "";
-    btns.innerHTML = "";
+    body.innerHTML = ""; btns.innerHTML = "";
 
     let done = false;
     const close = v => {
       if (done) return;
-      done = true;
-      m.classList.add("hidden");
+      done = true; m.classList.add("hidden");
       document.removeEventListener("keydown", onKey);
       resolve(v);
     };
     const onKey = e => { if (e.key === "Escape") close(null); };
     document.addEventListener("keydown", onKey);
 
+    if (opts.html) {
+      body.innerHTML = opts.html;
+      if (opts.onRender) opts.onRender(body, close);
+    }
+
     if (opts.choices) {
       opts.choices.forEach(c => {
+        const label = typeof c === "string" ? c : c.label;
+        const value = typeof c === "string" ? c : c.value;
         const b = document.createElement("button");
         b.className = "choice";
-        b.textContent = c;
-        b.onclick = () => close(c);
+        b.innerHTML = esc(label) + (c.sub ? "<small>" + esc(c.sub) + "</small>" : "");
+        b.onclick = () => close(value);
         body.appendChild(b);
       });
     }
 
     let field = null;
     if (opts.input) {
-      field = document.createElement("input");
-      field.type = opts.input === "number" ? "number" : "text";
-      if (opts.input === "number") field.inputMode = "decimal";
+      field = document.createElement(opts.input === "area" ? "textarea" : "input");
+      if (opts.input === "area") field.rows = 4;
+      else { field.type = opts.input === "number" ? "number" : "text"; if (opts.input === "number") field.inputMode = "decimal"; }
       field.placeholder = opts.placeholder || "";
       field.value = opts.value || "";
       body.appendChild(field);
-      field.onkeydown = e => { if (e.key === "Enter") close(field.value); };
+      if (opts.input !== "area") field.onkeydown = e => { if (e.key === "Enter") close(field.value); };
     }
 
     const cancel = document.createElement("button");
     cancel.className = "btn";
-    cancel.textContent = "Отмена";
+    cancel.textContent = opts.cancelText || "Отмена";
     cancel.onclick = () => close(null);
     btns.appendChild(cancel);
 
@@ -592,30 +753,58 @@ function ask(opts) {
   });
 }
 
-function day(key) {
-  if (!DAYS[key]) {
-    DAYS[key] = { ex: {}, log: {}, meals: {}, swap: {}, water: 0, cre: false, skip: null };
-    if (!INDEX.includes(key)) { INDEX.push(key); saveIndex(); }
-  }
-  return DAYS[key];
-}
-const dayRO = key => DAYS[key] || null;
+/** Выбор упражнения: поиск + группы + возможность вписать своё. */
+function pickExercise() {
+  return new Promise(resolve => {
+    const html =
+      '<input id="pk-q" placeholder="поиск по названию" autocomplete="off">' +
+      '<div id="pk-list" style="max-height:52vh;overflow-y:auto"></div>';
 
-/* ==================== DAY ==================== */
+    ask({
+      title: "Выбрать упражнение",
+      html,
+      cancelText: "Закрыть",
+      onRender: (body, close) => {
+        const list = body.querySelector("#pk-list");
+        const q = body.querySelector("#pk-q");
+
+        const draw = () => {
+          const term = q.value.trim().toLowerCase();
+          let out = "";
+          for (const [grp, items] of Object.entries(LIB)) {
+            const hits = items.filter(x => !term || x.toLowerCase().includes(term));
+            if (!hits.length) continue;
+            out += '<div class="grp">' + grp.toUpperCase() + "</div>";
+            out += hits.map(x => '<div class="pick" data-x="' + esc(x) + '">' + esc(x) + "</div>").join("");
+          }
+          if (term) out += '<div class="pick" style="color:var(--train)" data-x="' + esc(q.value.trim()) + '">Своё: ' + esc(q.value.trim()) + "</div>";
+          if (!out) out = '<p class="vs" style="margin-top:14px">Ничего не нашлось. Напиши своё название.</p>';
+          list.innerHTML = out;
+          list.querySelectorAll("[data-x]").forEach(el =>
+            el.onclick = () => { close(null); resolve(el.dataset.x); });
+        };
+
+        q.oninput = draw;
+        draw();
+      }
+    }).then(v => { if (v === null) resolve(null); });
+  });
+}
+
+/* ==================== ЭКРАН ДНЯ ==================== */
 
 function renderDay() {
   const key = iso(cur);
   const d = dayRO(key);
-  const ci = cycleIdx(cur);
-  const plan = CYCLE[ci];
-  const isTrain = !!plan.w;
-  const wk = isTrain ? WORKOUTS[plan.w] : null;
-  const meals = MEALS[ci];
+  const pi = planIdx(cur);
+  const plan = PLAN.days[pi];
+  const isTrain = plan.type === "train";
+  const meals = PLAN.meals[pi];
   const today = iso(new Date());
   const skipped = d && d.skip;
 
   $("d-main").textContent = cur.getDate() + " " + MONTHS[cur.getMonth()] + (key === today ? ", сегодня" : "");
-  $("d-sub").textContent = DOW[(cur.getDay() + 6) % 7].toUpperCase() + " · ДЕНЬ ЦИКЛА " + (ci + 1) + "/14";
+  $("d-sub").textContent = DOW[(cur.getDay() + 6) % 7].toUpperCase() + " · ДЕНЬ " + (pi + 1) + " ИЗ 14";
   $("next").disabled = daysBetween(new Date(), cur) >= 7;
 
   const kind = $("d-kind");
@@ -623,45 +812,56 @@ function renderDay() {
   else if (isTrain) { kind.className = "kind t"; kind.textContent = "ЗАЛ"; }
   else { kind.className = "kind r"; kind.textContent = "ОТДЫХ"; }
 
-  $("d-title").textContent = skipped ? "День пропущен" : (isTrain ? wk.name : "День отдыха");
-  $("d-note").textContent = skipped ? ("Причина: " + d.skip) : (isTrain ? (wk.note || CARDIO) : plan.r);
+  $("d-title").textContent = skipped ? "День пропущен" : (isTrain ? plan.name : "День отдыха");
+  $("d-note").textContent = skipped ? ("Причина: " + d.skip) : (plan.note || "");
 
   let html = "";
 
   if (isTrain && !skipped) {
-    const done = wk.ex.filter((_, i) => d && d.ex[i]).length;
+    const done = plan.ex.filter((_, i) => d && d.ex[i]).length;
     html += `<div class="mod"><div class="mod-head">
-      <span class="mod-name t">УПРАЖНЕНИЯ</span><span class="mod-count">${done}/${wk.ex.length}</span></div>`;
-    wk.ex.forEach(([n, s], i) => {
+      <span class="mod-name t">УПРАЖНЕНИЯ</span>
+      <span class="mod-right">
+        <button class="mod-act" data-edit="w">изменить</button>
+        <span class="mod-count">${done}/${plan.ex.length}</span>
+      </span></div>`;
+    plan.ex.forEach((x, i) => {
       const on = d && d.ex[i];
       const lg = (d && d.log[i]) || "";
       html += `<div class="row ${on ? "on" : ""}">
         <div class="box" data-tex="${i}">${CHECK}</div>
         <div class="r-body">
-          <div class="r-name">${n}</div>
-          <div class="r-meta"><b>${s}</b></div>
+          <div class="r-name">${esc(x.n)}</div>
+          <div class="r-meta"><b>${esc(x.s)}</b></div>
           <input class="logfield" data-log="${i}" value="${esc(lg)}" placeholder="рабочий вес, ощущения">
         </div></div>`;
     });
-    if (wk.note) html += `<div class="row"><div class="r-body"><div class="r-meta">${CARDIO}</div></div></div>`;
     html += `</div>`;
   }
 
+  const collapsed = P.foodCollapsed === true;
   const mdone = meals.filter((_, i) => d && d.meals[i]).length;
   html += `<div class="mod"><div class="mod-head">
-    <span class="mod-name f">ПИТАНИЕ</span><span class="mod-count">${mdone}/4</span></div>`;
-  meals.forEach((m, i) => {
-    const on = d && d.meals[i];
-    const sw = d && d.swap[i];
-    html += `<div class="row ${on ? "on" : ""}">
-      <div class="box" data-tmeal="${i}">${CHECK}</div>
-      <div class="r-body">
-        <div class="r-meta" style="margin:0 0 3px">${MEAL_NAMES[i]}</div>
-        <div class="r-name">${sw ? esc(sw) : m}</div>
-        ${sw ? '<div class="swapped">заменено, в плане было другое</div>' : ""}
-        <button class="swap" data-swap="${i}">${sw ? "изменить замену" : "заменить блюдо"}</button>
-      </div></div>`;
-  });
+    <span class="mod-name f">ПИТАНИЕ</span>
+    <span class="mod-right">
+      <button class="mod-act" data-edit="f">изменить</button>
+      <span class="mod-count">${mdone}/${meals.length}</span>
+      <span class="chev" id="food-chev">${collapsed ? "▾" : "▴"}</span>
+    </span></div>`;
+  if (!collapsed) {
+    meals.forEach((m, i) => {
+      const on = d && d.meals[i];
+      const sw = d && d.swap[i];
+      html += `<div class="row ${on ? "on" : ""}">
+        <div class="box" data-tmeal="${i}">${CHECK}</div>
+        <div class="r-body">
+          <div class="r-meta" style="margin:0 0 3px">${esc(m.n)}</div>
+          <div class="r-name">${sw ? esc(sw) : esc(m.t)}</div>
+          ${sw ? '<div class="swapped">заменено</div>' : ""}
+          <button class="mod-act" data-swap="${i}" style="margin-top:5px">${sw ? "изменить замену" : "съел другое"}</button>
+        </div></div>`;
+    });
+  }
   html += `</div>`;
 
   const wn = d ? d.water : 0;
@@ -683,10 +883,10 @@ function renderDay() {
     ? `<button class="btn" id="unskip">Вернуть день</button>`
     : `<button class="btn btn-skip" id="skip">Отметить пропуск</button>`;
 
-  bindDay(key);
+  bindDay(key, pi);
 }
 
-function bindDay(key) {
+function bindDay(key, pi) {
   document.querySelectorAll("[data-tex]").forEach(el => el.onclick = () => {
     const d = day(key); d.ex[el.dataset.tex] = !d.ex[el.dataset.tex];
     haptic("medium"); queueDay(key); renderDay();
@@ -701,11 +901,9 @@ function bindDay(key) {
   document.querySelectorAll("[data-swap]").forEach(el => el.onclick = async () => {
     const i = el.dataset.swap, d = day(key);
     const v = await ask({
-      title: "Чем заменил " + MEAL_NAMES[i].toLowerCase() + "?",
-      input: "text",
+      title: "Чем заменил?", input: "area",
       placeholder: "например: творог 200 г + банан",
-      value: d.swap[i] || "",
-      okText: "Сохранить"
+      value: d.swap[i] || "", okText: "Сохранить"
     });
     if (v === null) return;
     if (v.trim() === "") delete d.swap[i]; else d.swap[i] = v.trim();
@@ -719,12 +917,19 @@ function bindDay(key) {
   const cre = document.querySelector("[data-cre]");
   if (cre) cre.onclick = () => { const d = day(key); d.cre = !d.cre; haptic("light"); queueDay(key); renderDay(); };
 
+  const chev = $("food-chev");
+  if (chev) chev.onclick = () => { P.foodCollapsed = !P.foodCollapsed; saveProfile(); renderDay(); };
+
+  document.querySelectorAll("[data-edit]").forEach(el => el.onclick = () => {
+    editIdx = pi;
+    openEdit(el.dataset.edit);
+  });
+
   const sk = $("skip");
   if (sk) sk.onclick = async () => {
     const r = await ask({ title: "Почему пропуск?", choices: SKIP_REASONS });
     if (r === null) return;
-    day(key).skip = r;
-    haptic("heavy"); queueDay(key); renderDay();
+    day(key).skip = r; haptic("heavy"); queueDay(key); renderDay();
   };
   const un = $("unskip");
   if (un) un.onclick = () => { day(key).skip = null; queueDay(key); renderDay(); };
@@ -733,7 +938,207 @@ function bindDay(key) {
 $("prev").onclick = () => { cur.setDate(cur.getDate() - 1); renderDay(); };
 $("next").onclick = () => { cur.setDate(cur.getDate() + 1); renderDay(); };
 
-/* ==================== CALENDAR ==================== */
+/* ==================== РЕДАКТОР ==================== */
+
+let editMode = "w";
+
+function openEdit(mode) {
+  editMode = mode;
+  switchView("edit");
+  renderEdit();
+}
+
+$("e-back").onclick = () => { switchView("day"); renderDay(); };
+
+function renderEdit() {
+  const pi = editIdx;
+  const plan = PLAN.days[pi];
+  $("e-sub").textContent = "ДЕНЬ " + (pi + 1) + " ИЗ 14";
+  $("e-head").textContent = editMode === "w" ? "Тренировка" : "Питание";
+
+  if (editMode === "f") return renderMealEdit(pi);
+
+  if (plan.type === "rest") {
+    $("e-body").innerHTML = `
+      <div class="info" style="margin-top:20px">Сейчас это день отдыха. Заметка: ${esc(plan.note || "—")}</div>
+      <button class="btn" id="e-note" style="margin-bottom:10px">Изменить заметку</button>
+      <button class="btn btn-main" id="e-tot">Сделать тренировочным днём</button>`;
+    $("e-note").onclick = async () => {
+      const v = await ask({ title: "Заметка на день отдыха", input: "area", value: plan.note || "", okText: "Сохранить" });
+      if (v === null) return;
+      plan.note = v.trim(); savePlan(); renderEdit();
+    };
+    $("e-tot").onclick = () => {
+      PLAN.days[pi] = { type: "train", name: "Новая тренировка", note: CARDIO_NOTE, ex: Array.from({ length: 6 }, () => ({ n: "", s: "" })) };
+      savePlan(); renderEdit(); haptic("medium");
+    };
+    return;
+  }
+
+  let html = `
+    <div class="field" style="margin-top:18px">
+      <label>Название тренировки</label>
+      <input id="e-name" value="${esc(plan.name)}" placeholder="например: Ноги и грудь">
+    </div>
+    <div class="sub" style="margin-top:20px">СЛОТЫ · ${plan.ex.length}</div>`;
+
+  plan.ex.forEach((x, i) => {
+    html += `<div class="slot">
+      <span class="slot-n">${i + 1}</span>
+      <div class="slot-body" data-pick="${i}">
+        <div class="slot-name ${x.n ? "" : "empty"}">${x.n ? esc(x.n) : "выбрать упражнение"}</div>
+      </div>
+      <input class="slot-sets" data-sets="${i}" value="${esc(x.s)}" placeholder="4 × 10">
+      <button class="slot-x" data-del="${i}">×</button>
+    </div>`;
+  });
+
+  html += `
+    <button class="slot-add" id="e-add">+ Добавить слот</button>
+    <div class="sub">ЕЩЁ</div>
+    <button class="btn" id="e-copy" style="margin-bottom:8px">Скопировать из другой тренировки</button>
+    <button class="btn" id="e-save-tpl" style="margin-bottom:8px">Сохранить как шаблон</button>
+    <button class="btn" id="e-note2" style="margin-bottom:8px">Изменить заметку под названием</button>
+    <button class="btn btn-skip" id="e-torest">Сделать днём отдыха</button>
+    <div class="btnrow"><button class="btn btn-main" id="e-done">Готово</button></div>`;
+
+  $("e-body").innerHTML = html;
+  bindEdit(pi, plan);
+}
+
+function bindEdit(pi, plan) {
+  $("e-name").onchange = e => { plan.name = e.target.value.trim() || "Тренировка"; savePlan(); };
+
+  document.querySelectorAll("[data-pick]").forEach(el => el.onclick = async () => {
+    const i = +el.dataset.pick;
+    const x = await pickExercise();
+    if (!x) return;
+    plan.ex[i].n = x;
+    if (!plan.ex[i].s) plan.ex[i].s = "4 × 10";
+    savePlan(); renderEdit(); haptic("light");
+  });
+
+  document.querySelectorAll("[data-sets]").forEach(el => {
+    el.onchange = () => { plan.ex[+el.dataset.sets].s = el.value.trim(); savePlan(); };
+  });
+
+  document.querySelectorAll("[data-del]").forEach(el => el.onclick = () => {
+    plan.ex.splice(+el.dataset.del, 1);
+    savePlan(); renderEdit(); haptic("medium");
+  });
+
+  $("e-add").onclick = () => {
+    if (plan.ex.length >= MAX_EX) return;
+    plan.ex.push({ n: "", s: "" });
+    savePlan(); renderEdit(); haptic("light");
+  };
+
+  $("e-copy").onclick = async () => {
+    const opts = [];
+    PLAN.days.forEach((d, i) => {
+      if (d.type === "train" && i !== pi && d.ex.length)
+        opts.push({ label: d.name, value: "d" + i, sub: "день " + (i + 1) + " · " + d.ex.length + " упр." });
+    });
+    PLAN.templates.forEach((t, i) =>
+      opts.push({ label: t.name, value: "t" + i, sub: "шаблон · " + t.ex.length + " упр." }));
+
+    if (!opts.length) { await ask({ title: "Копировать нечего: других тренировок и шаблонов пока нет.", okText: "Понятно" }); return; }
+
+    const v = await ask({ title: "Откуда скопировать?", choices: opts });
+    if (!v) return;
+    const src = v[0] === "d" ? PLAN.days[+v.slice(1)] : PLAN.templates[+v.slice(1)];
+    plan.ex = src.ex.map(x => ({ n: x.n, s: x.s }));
+    if (v[0] === "t") plan.name = src.name;
+    savePlan(); renderEdit(); haptic("medium");
+  };
+
+  $("e-save-tpl").onclick = async () => {
+    const name = await ask({ title: "Название шаблона", input: "text", value: plan.name, okText: "Сохранить" });
+    if (!name || !name.trim()) return;
+    PLAN.templates.push({ name: name.trim(), ex: plan.ex.map(x => ({ n: x.n, s: x.s })) });
+    savePlan(); haptic("medium");
+    await ask({ title: "Шаблон сохранён. Он появится в списке при копировании.", okText: "Хорошо" });
+  };
+
+  $("e-note2").onclick = async () => {
+    const v = await ask({ title: "Заметка под названием", input: "area", value: plan.note || "", okText: "Сохранить" });
+    if (v === null) return;
+    plan.note = v.trim(); savePlan(); renderEdit();
+  };
+
+  $("e-torest").onclick = async () => {
+    const ok = await ask({ title: "Сделать этот день днём отдыха? Упражнения из него удалятся.", okText: "Сделать" });
+    if (!ok) return;
+    PLAN.days[pi] = { type: "rest", note: "Восстановление." };
+    savePlan(); renderEdit(); haptic("heavy");
+  };
+
+  $("e-done").onclick = () => { switchView("day"); renderDay(); };
+}
+
+function renderMealEdit(pi) {
+  const meals = PLAN.meals[pi];
+  let html = `<div class="sub" style="margin-top:18px">СЛОТЫ · ${meals.length} ИЗ ${MAX_MEALS}</div>`;
+
+  meals.forEach((m, i) => {
+    html += `<div class="slot meal-slot">
+      <div class="slot-head">
+        <span class="slot-n">${i + 1}</span>
+        <input class="meal-name" data-mn="${i}" value="${esc(m.n)}" placeholder="Завтрак">
+        <button class="slot-x" data-mdel="${i}">×</button>
+      </div>
+      <textarea class="meal-text" data-mt="${i}" placeholder="что и сколько">${esc(m.t)}</textarea>
+    </div>`;
+  });
+
+  if (meals.length < MAX_MEALS) html += `<button class="slot-add" id="e-madd">+ Добавить приём пищи</button>`;
+
+  html += `
+    <div class="sub">ЕЩЁ</div>
+    <button class="btn" id="e-mcopy" style="margin-bottom:8px">Скопировать из другого дня</button>
+    <button class="btn" id="e-mall">Применить ко всем 14 дням</button>
+    <div class="btnrow"><button class="btn btn-main" id="e-mdone">Готово</button></div>`;
+
+  $("e-body").innerHTML = html;
+
+  document.querySelectorAll("[data-mn]").forEach(el => {
+    el.onchange = () => { meals[+el.dataset.mn].n = el.value.trim() || "Приём пищи"; savePlan(); };
+  });
+  document.querySelectorAll("[data-mt]").forEach(el => {
+    el.onchange = () => { meals[+el.dataset.mt].t = el.value.trim(); savePlan(); };
+  });
+  document.querySelectorAll("[data-mdel]").forEach(el => el.onclick = () => {
+    meals.splice(+el.dataset.mdel, 1); savePlan(); renderEdit(); haptic("medium");
+  });
+
+  const add = $("e-madd");
+  if (add) add.onclick = () => {
+    meals.push({ n: "Приём пищи", t: "" });
+    savePlan(); renderEdit(); haptic("light");
+  };
+
+  $("e-mcopy").onclick = async () => {
+    const opts = PLAN.meals.map((m, i) => i === pi ? null : ({
+      label: "День " + (i + 1), value: String(i),
+      sub: (m[0] && m[0].t ? m[0].t.slice(0, 42) : "пусто")
+    })).filter(Boolean);
+    const v = await ask({ title: "Откуда скопировать?", choices: opts });
+    if (v === null) return;
+    PLAN.meals[pi] = PLAN.meals[+v].map(m => ({ n: m.n, t: m.t }));
+    savePlan(); renderEdit(); haptic("medium");
+  };
+
+  $("e-mall").onclick = async () => {
+    const ok = await ask({ title: "Поставить это питание на все 14 дней? Текущее в остальных днях сотрётся.", okText: "Применить" });
+    if (!ok) return;
+    for (let i = 0; i < 14; i++) PLAN.meals[i] = meals.map(m => ({ n: m.n, t: m.t }));
+    savePlan(); haptic("heavy"); renderEdit();
+  };
+
+  $("e-mdone").onclick = () => { switchView("day"); renderDay(); };
+}
+
+/* ==================== КАЛЕНДАРЬ ==================== */
 
 function renderCal() {
   $("c-month").textContent = MONTHS_N[calM.getMonth()] + " " + calM.getFullYear();
@@ -749,19 +1154,18 @@ function renderCal() {
 
   for (let n = 1; n <= total; n++) {
     const dt = new Date(calM.getFullYear(), calM.getMonth(), n);
-    const key = iso(dt), d = dayRO(key), ci = cycleIdx(dt);
-    const isTrain = !!CYCLE[ci].w, fut = isFuture(dt);
+    const key = iso(dt), d = dayRO(key), pi = planIdx(dt);
+    const plan = PLAN.days[pi], isTrain = plan.type === "train", fut = isFuture(dt);
     let dots = "";
 
     if (d && d.skip) dots = `<span class="dot" style="background:var(--skip)"></span>`;
     else if (d) {
-      if (isTrain) {
-        const tot = WORKOUTS[CYCLE[ci].w].ex.length;
+      if (isTrain && plan.ex.length) {
         const dn = Object.values(d.ex).filter(Boolean).length;
-        if (dn > 0) dots += `<span class="dot" style="background:var(--train);opacity:${dn >= tot ? 1 : .45}"></span>`;
+        if (dn > 0) dots += `<span class="dot" style="background:var(--train);opacity:${dn >= plan.ex.length ? 1 : .45}"></span>`;
       }
       const md = Object.values(d.meals).filter(Boolean).length;
-      if (md > 0) dots += `<span class="dot" style="background:var(--food);opacity:${md >= 4 ? 1 : .45}"></span>`;
+      if (md > 0) dots += `<span class="dot" style="background:var(--food);opacity:${md >= PLAN.meals[pi].length ? 1 : .45}"></span>`;
       if (d.water > 0) dots += `<span class="dot" style="background:var(--water);opacity:${d.water >= P.goal ? 1 : .45}"></span>`;
     }
 
@@ -779,28 +1183,28 @@ function renderCal() {
 $("c-prev").onclick = () => { calM.setMonth(calM.getMonth() - 1); renderCal(); };
 $("c-next").onclick = () => { calM.setMonth(calM.getMonth() + 1); renderCal(); };
 
-/* ==================== STATS ==================== */
+/* ==================== СТАТИСТИКА ==================== */
 
-function renderStats() {
+function computeStats() {
   const start = parseISO(P.start);
   const elapsed = Math.max(0, daysBetween(start, new Date())) + 1;
   let planned = 0, done = 0, partial = 0, skips = 0, waterSum = 0, waterDays = 0, mealsDone = 0, mealsPlan = 0;
 
   for (let i = 0; i < elapsed; i++) {
     const dt = new Date(start); dt.setDate(dt.getDate() + i);
-    const key = iso(dt), d = dayRO(key), ci = cycleIdx(dt), isTrain = !!CYCLE[ci].w;
+    const key = iso(dt), d = dayRO(key), pi = planIdx(dt);
+    const plan = PLAN.days[pi], isTrain = plan.type === "train" && plan.ex.length > 0;
     if (isTrain) planned++;
     if (d && d.skip) { skips++; continue; }
     if (d) {
       if (isTrain) {
-        const tot = WORKOUTS[CYCLE[ci].w].ex.length;
         const dn = Object.values(d.ex).filter(Boolean).length;
-        if (dn >= tot) done++; else if (dn > 0) partial++;
+        if (dn >= plan.ex.length) done++; else if (dn > 0) partial++;
       }
       if (d.water > 0) { waterSum += d.water; waterDays++; }
       mealsDone += Object.values(d.meals).filter(Boolean).length;
     }
-    mealsPlan += 4;
+    mealsPlan += PLAN.meals[pi].length;
   }
 
   let streak = 0;
@@ -809,28 +1213,47 @@ function renderStats() {
     if (daysBetween(start, dt) < 0) break;
     const d = dayRO(iso(dt));
     if (d && d.skip) break;
-    if (CYCLE[cycleIdx(dt)].w) {
+    const plan = PLAN.days[planIdx(dt)];
+    if (plan.type === "train" && plan.ex.length) {
       const dn = d ? Object.values(d.ex).filter(Boolean).length : 0;
       if (dn === 0) { if (i === 0) continue; else break; }
     }
     streak++;
   }
 
+  return {
+    elapsed, planned, done, partial, skips, streak,
+    mealPct: mealsPlan ? Math.round(mealsDone / mealsPlan * 100) : 0,
+    waterAvg: waterDays ? waterSum / waterDays * 0.3 : null,
+    planDay: planIdx(new Date()) + 1
+  };
+}
+
+function pushSummary() {
+  if (!online) return;
+  const s = computeStats();
+  push("/summary", {
+    done: s.done, planned: s.planned, skips: s.skips,
+    streak: s.streak, meal_pct: s.mealPct, cycle_day: s.planDay
+  });
+}
+
+function renderStats() {
+  const st = computeStats();
   const lastW = WEIGHTS.length ? WEIGHTS[WEIGHTS.length - 1].w : P.w0;
   const delta = (lastW - P.w0).toFixed(1);
-  const mealPct = mealsPlan ? Math.round(mealsDone / mealsPlan * 100) : 0;
   const sd = parseISO(P.start);
 
   $("s-period").textContent = "С " + sd.getDate() + " " + MONTHS[sd.getMonth()] +
-    " · день " + elapsed + ", цикл " + (Math.floor((elapsed - 1) / 14) + 1);
+    " · день " + st.elapsed + ", круг " + (Math.floor((st.elapsed - 1) / 14) + 1);
 
   $("s-metrics").innerHTML = `
-    <div class="metric"><span class="metric-k">Тренировок выполнено</span><span class="metric-v good">${done} / ${planned}</span></div>
-    ${partial ? `<div class="metric"><span class="metric-k">Начато, но не закрыто</span><span class="metric-v">${partial}</span></div>` : ""}
-    <div class="metric"><span class="metric-k">Пропусков</span><span class="metric-v ${skips ? "bad" : ""}">${skips}</span></div>
-    <div class="metric"><span class="metric-k">Дней без пропуска подряд</span><span class="metric-v">${streak}</span></div>
-    <div class="metric"><span class="metric-k">Питание по плану</span><span class="metric-v">${mealPct}%</span></div>
-    <div class="metric"><span class="metric-k">Вода в среднем</span><span class="metric-v">${waterDays ? (waterSum / waterDays * 0.3).toFixed(1) : "—"} л</span></div>
+    <div class="metric"><span class="metric-k">Тренировок выполнено</span><span class="metric-v good">${st.done} / ${st.planned}</span></div>
+    ${st.partial ? `<div class="metric"><span class="metric-k">Начато, но не закрыто</span><span class="metric-v">${st.partial}</span></div>` : ""}
+    <div class="metric"><span class="metric-k">Пропусков</span><span class="metric-v ${st.skips ? "bad" : ""}">${st.skips}</span></div>
+    <div class="metric"><span class="metric-k">Дней без пропуска подряд</span><span class="metric-v">${st.streak}</span></div>
+    <div class="metric"><span class="metric-k">Питание по плану</span><span class="metric-v">${st.mealPct}%</span></div>
+    <div class="metric"><span class="metric-k">Вода в среднем</span><span class="metric-v">${st.waterAvg ? st.waterAvg.toFixed(1) : "—"} л</span></div>
     <div class="metric"><span class="metric-k">Вес сейчас</span><span class="metric-v">${lastW} кг</span></div>
     <div class="metric"><span class="metric-k">Изменение от старта</span><span class="metric-v ${delta < 0 ? "good" : ""}">${delta > 0 ? "+" : ""}${delta} кг</span></div>`;
 
@@ -842,28 +1265,24 @@ function renderStats() {
         return `<div class="metric"><span class="metric-k">${dd.getDate()} ${MONTHS[dd.getMonth()]}</span>
           <span class="metric-v">${x.w} кг${x.t ? " · " + x.t + " см" : ""}</span></div>`;
       }).join("")
-    : `<p class="vs" style="margin-top:8px">Замеров пока нет. По плану взвешивание натощак на 7-й и 14-й день цикла.</p>`;
+    : `<p class="vs" style="margin-top:8px">Замеров пока нет.</p>`;
 }
 
 function renderChart() {
   const pts = [{ d: P.start, w: P.w0 }].concat(WEIGHTS);
-  if (pts.length < 2) {
-    $("s-chart").innerHTML = `<p class="vs">Нужно минимум два замера, чтобы построить линию.</p>`;
-    return;
-  }
+  if (pts.length < 2) { $("s-chart").innerHTML = `<p class="vs">Нужно минимум два замера, чтобы построить линию.</p>`; return; }
   const W = 320, H = 150, pad = 26;
   const ws = pts.map(p => +p.w);
   const min = Math.min(...ws) - .6, max = Math.max(...ws) + .6;
   const xs = i => pad + i * (W - pad - 8) / (pts.length - 1);
   const ys = v => H - pad - (v - min) / (max - min) * (H - pad - 14);
-  const line = pts.map((p, i) => xs(i) + "," + ys(+p.w)).join(" ");
 
   $("s-chart").innerHTML = `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <line x1="${pad}" y1="${ys(max - .6)}" x2="${W - 8}" y2="${ys(max - .6)}" stroke="#2a2f38"/>
     <line x1="${pad}" y1="${ys(min + .6)}" x2="${W - 8}" y2="${ys(min + .6)}" stroke="#2a2f38"/>
     <text x="2" y="${ys(max - .6) + 3}">${(max - .6).toFixed(1)}</text>
     <text x="2" y="${ys(min + .6) + 3}">${(min + .6).toFixed(1)}</text>
-    <polyline points="${line}" fill="none" stroke="#57b08f" stroke-width="2" stroke-linejoin="round"/>
+    <polyline points="${pts.map((p, i) => xs(i) + "," + ys(+p.w)).join(" ")}" fill="none" stroke="#57b08f" stroke-width="2" stroke-linejoin="round"/>
     ${pts.map((p, i) => `<circle cx="${xs(i)}" cy="${ys(+p.w)}" r="3" fill="#57b08f"/>`).join("")}
   </svg>`;
 }
@@ -881,68 +1300,102 @@ $("s-add").onclick = async () => {
   saveWeights(); renderStats(); haptic("medium");
 };
 
-/* ==================== SETTINGS ==================== */
+/* ==================== ДРУЗЬЯ ==================== */
+
+async function renderFriends() {
+  const box = $("f-list");
+  const shareOn = P.share !== false;
+  $("f-share").innerHTML = shareOn ? CHECK : "";
+  $("f-share-row").classList.toggle("on", shareOn);
+
+  if (!online) { box.innerHTML = `<p class="vs">Общий прогресс работает только через бота и при поднятом сервере.</p>`; return; }
+
+  box.innerHTML = `<p class="vs">Загружаю…</p>`;
+  try {
+    const rows = await api("/leaderboard");
+    if (!rows.length) { box.innerHTML = `<p class="vs">Пока никого. Кинь друзьям ссылку на бота.</p>`; return; }
+    box.innerHTML = rows.map((r, i) => `
+      <div class="metric" style="${r.me ? "border-bottom-color:var(--train)" : ""}">
+        <span class="metric-k">
+          <span style="font-family:var(--mono);color:var(--faint);margin-right:8px">${i + 1}</span>
+          ${esc(r.name)}${r.me ? " · ты" : ""}
+          <div class="r-meta" style="margin-top:2px">день ${r.cycle_day}/14 · серия ${r.streak} · питание ${r.meal_pct}%${r.skips ? " · пропусков " + r.skips : ""}</div>
+        </span>
+        <span class="metric-v ${r.me ? "good" : ""}">${r.done}/${r.planned}</span>
+      </div>`).join("");
+  } catch (e) {
+    box.innerHTML = `<p class="vs">Сервер не ответил. Попробуй позже.</p>`;
+  }
+}
+
+$("f-share").onclick = () => {
+  P.share = P.share === false;
+  saveProfile(); renderFriends(); haptic("light");
+};
+
+/* ==================== НАСТРОЙКИ ==================== */
 
 function fillSettings() {
-  $("m-w").value = P.w0; $("m-t").value = P.h || P.t0 || "";
+  $("m-w").value = P.w0; $("m-t").value = P.h || "";
   $("m-d").value = P.start; $("m-time").value = P.time; $("m-g").value = P.goal;
+
+  $("m-tpl").innerHTML = PLAN.templates.length
+    ? PLAN.templates.map((t, i) => `<div class="metric">
+        <span class="metric-k">${esc(t.name)}<div class="r-meta" style="margin-top:2px">${t.ex.length} упражнений</div></span>
+        <button class="slot-x" data-tdel="${i}">×</button></div>`).join("")
+    : `<p class="vs">Шаблонов пока нет. Сохранить тренировку как шаблон можно в её редакторе.</p>`;
+
+  document.querySelectorAll("[data-tdel]").forEach(el => el.onclick = () => {
+    PLAN.templates.splice(+el.dataset.tdel, 1); savePlan(); fillSettings(); haptic("medium");
+  });
 }
+
 $("m-save").onclick = () => {
   P.w0 = parseFloat($("m-w").value) || P.w0;
   P.h = parseFloat($("m-t").value) || null;
   P.start = $("m-d").value || P.start;
   P.time = $("m-time").value;
   P.goal = Math.max(1, Math.min(20, parseInt($("m-g").value) || 9));
-  saveProfile(); renderDay();
-  haptic("medium");
+  saveProfile(); renderDay(); haptic("medium");
   $("m-save").textContent = "Сохранено";
   setTimeout(() => $("m-save").textContent = "Сохранить", 1400);
 };
+
 $("m-exp").onclick = () => {
   const ta = $("m-json");
   ta.classList.toggle("hidden");
-  ta.value = JSON.stringify({ profile: P, days: DAYS, weights: WEIGHTS }, null, 1);
+  ta.value = JSON.stringify({ profile: P, plan: PLAN, days: DAYS, weights: WEIGHTS }, null, 1);
 };
+
+$("m-plan").onclick = async () => {
+  const ok = await ask({ title: "Вернуть исходную программу? Все твои правки тренировок и питания пропадут. Отметки и замеры останутся.", okText: "Вернуть" });
+  if (!ok) return;
+  PLAN = defaultPlan(); savePlan(); renderDay(); haptic("heavy");
+};
+
 $("m-reset").onclick = async () => {
-  const ok = await ask({
-    title: "Удалить все тренировки, замеры и отметки? Отменить будет нельзя.",
-    okText: "Удалить"
-  });
+  const ok = await ask({ title: "Удалить все тренировки, замеры и отметки? Отменить будет нельзя.", okText: "Удалить" });
   if (!ok) return;
   await Store.clear();
   location.reload();
 };
 
-/* ==================== NAV ==================== */
+/* ==================== НАВИГАЦИЯ ==================== */
+
+const VIEWS = ["day", "edit", "cal", "stat", "friends", "more"];
 
 function switchView(v) {
   document.querySelectorAll("nav button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
-  ["day", "cal", "stat", "more"].forEach(x => $("view-" + x).classList.toggle("hidden", x !== v));
+  VIEWS.forEach(x => $("view-" + x).classList.toggle("hidden", x !== v));
   window.scrollTo(0, 0);
   if (v === "cal") renderCal();
   if (v === "stat") renderStats();
+  if (v === "friends") renderFriends();
   if (v === "more") fillSettings();
 }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => { switchView(b.dataset.v); haptic("light"); });
 
-/* ==================== BOOT ==================== */
-
-$("o-go").onclick = async () => {
-  const w = parseFloat($("o-w").value);
-  if (!w) { $("o-w").focus(); return; }
-  P = {
-    w0: w,
-    h: parseFloat($("o-t").value) || null,
-    start: $("o-d").value || iso(new Date()),
-    time: $("o-time").value,
-    goal: Math.max(1, Math.min(20, parseInt($("o-g").value) || 9))
-  };
-  await Store.set("prof", P);
-  $("onb").classList.add("hidden");
-  $("app").classList.remove("hidden");
-  $("nav").classList.remove("hidden");
-  renderDay();
-};
+/* ==================== ЗАПУСК ==================== */
 
 function showOnboarding() {
   $("o-d").value = iso(new Date());
@@ -955,20 +1408,62 @@ function showApp() {
   $("onb").classList.add("hidden");
   $("app").classList.remove("hidden");
   $("nav").classList.remove("hidden");
+  if (online) $("nav-friends").classList.remove("hidden");
+  switchView("day");
   renderDay();
+  pushSummary();
 }
 
 function showError(e) {
   document.body.innerHTML =
     '<div style="padding:40px 20px;font-family:-apple-system,sans-serif;color:#e9ebef">' +
     '<div style="font-size:20px;font-weight:600;margin-bottom:10px">Не удалось загрузить</div>' +
-    '<div style="color:#8b93a3;font-size:14px;line-height:1.5">Покажи это сообщение целиком, по нему видно причину:</div>' +
+    '<div style="color:#8b93a3;font-size:14px">Покажи это сообщение целиком, по нему видно причину:</div>' +
     '<pre style="margin-top:14px;padding:12px;background:#1b1e24;border-radius:8px;color:#d9694a;' +
-    'font-size:11px;white-space:pre-wrap;word-break:break-word">' +
-    String(e && e.stack ? e.stack : e) + '</pre></div>';
+    'font-size:11px;white-space:pre-wrap;word-break:break-word">' + esc(e && e.stack ? e.stack : e) + '</pre></div>';
 }
 
 window.addEventListener("error", ev => showError(ev.error || ev.message));
+
+async function loadLocal() {
+  P = await Store.get("prof");
+  PLAN = await Store.get("plan");
+  INDEX = (await Store.get("idx")) || [];
+  WEIGHTS = (await Store.get("wts")) || [];
+  const loaded = await Promise.all(INDEX.map(k => Store.get("d:" + k).catch(() => null)));
+  INDEX.forEach((k, i) => { if (loaded[i]) DAYS[k] = loaded[i]; });
+}
+
+async function loadServer() {
+  const s = await api("/state");
+  if (!s.profile) return false;
+  P = { w0: s.profile.w0, h: s.profile.h, start: s.profile.start, time: s.profile.time, goal: s.profile.goal, share: s.profile.share };
+  PLAN = s.plan || null;
+  DAYS = s.days || {};
+  INDEX = Object.keys(DAYS);
+  WEIGHTS = s.weights || [];
+  Store.set("prof", P); Store.set("idx", INDEX); Store.set("wts", WEIGHTS);
+  if (PLAN) Store.set("plan", PLAN);
+  Object.keys(DAYS).forEach(k => Store.set("d:" + k, DAYS[k]));
+  return true;
+}
+
+$("o-go").onclick = async () => {
+  const w = parseFloat($("o-w").value);
+  if (!w) { $("o-w").focus(); return; }
+  P = {
+    w0: w, h: parseFloat($("o-t").value) || null,
+    start: $("o-d").value || iso(new Date()),
+    time: $("o-time").value,
+    goal: Math.max(1, Math.min(20, parseInt($("o-g").value) || 9)),
+    share: true, foodCollapsed: false
+  };
+  PLAN = PLAN || defaultPlan();
+  await Store.set("prof", P);
+  await Store.set("plan", PLAN);
+  pushProfile(); pushPlan();
+  showApp();
+};
 
 (async function boot() {
   try {
@@ -980,16 +1475,16 @@ window.addEventListener("error", ev => showError(ev.error || ev.message));
       } catch (e) {}
     }
 
-    P = await Store.get("prof");
+    let fromServer = false;
+    if (online) {
+      try { fromServer = await loadServer(); } catch (e) { console.warn("server unavailable", e); }
+    }
+    if (!fromServer) await loadLocal();
+
+    if (!PLAN || !PLAN.days || PLAN.days.length !== 14) { PLAN = defaultPlan(); Store.set("plan", PLAN); }
+    if (!PLAN.templates) PLAN.templates = [];
+
     if (!P) { showOnboarding(); return; }
-
-    INDEX = (await Store.get("idx")) || [];
-    WEIGHTS = (await Store.get("wts")) || [];
-
-    // параллельно, иначе тридцать дней грузятся тридцатью запросами подряд
-    const loaded = await Promise.all(INDEX.map(k => Store.get("d:" + k).catch(() => null)));
-    INDEX.forEach((k, i) => { if (loaded[i]) DAYS[k] = loaded[i]; });
-
     showApp();
   } catch (e) {
     console.error(e);
